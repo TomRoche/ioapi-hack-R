@@ -1,0 +1,14 @@
+*~
+
+# don't backup data files
+*.csv
+*.csv.*
+*.nc
+*.nc.*
+*.rds
+*.rds.*
+
+# pre-SCM backups
+*.r.*
+# pre-SCM backups
+*.sh.*

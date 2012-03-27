@@ -1,0 +1,49 @@
+This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files, using two common netCDF tools, NCO
+
+http://nco.sourceforge.net/
+
+and R, specifically with packages 'ncdf4'
+
+http://cirrus.ucsd.edu/~pierce/ncdf/
+
+and 'fields' (for plotting)
+
+http://www.image.ucar.edu/Software/Fields/
+
+(It also uses a PDF viewer to display produced plots, and m3tools/m3stat from
+
+www.baronams.com/products/ioapi/M3STAT.html
+
+for "IOAPI verification," though it's more slack than VERDI. These can be commented out if desired.) To use it,
+
+1 Create your git repository and fork the code. Read it (starting with the driver script computeCropSum.sh) while you ...
+
+2 Download the source netCDF from
+
+https://github.com/TomRoche/ioapi-hack-R/downloads
+
+  to the same folder.
+
+3 Check your
+
+* permissions: all the .r and .sh should be executable by your user.
+* NCO: it should be uplevel and in the path
+* R: it should be uplevel, in the path, and include package=ncdf4
+* PDF viewer: edit the driver script to call yours (or comment it out)
+* m3tools/m3stat: uplevel and in path (or comment it out)
+
+4 Run it: with everything in that folder, and with it==$(pwd)
+
+./computeCropSum.sh
+
+  It should produce a new netCDF file named '5yravg.DN2summed.nc' with
+
+* many fewer datavars than the source NetCDF: in fact, only one other than the IOAPI "metadatavar" TFLAG
+
+* 2 more blank layers in its datavar than in the same datavar in the source netCDF.
+
+  as well as a plot file.
+
+5 Improve it: the code is currently pretty crude, so feel free to fix/extend, and give me a pull request.
+
+HTH, Tom Roche <Tom_Roche@pobox.com>
