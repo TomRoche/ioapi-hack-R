@@ -26,6 +26,8 @@ data.input.fp <- "./5yravg.DN2summed.nc"
 # TODO: get from environment
 # TODO: delete if exists
 data.output.fp <- "./5yravg.DN2windowed.nc"
+# the data variable of interest
+datavar.name <- "DN2"
 
 # Windowing bounds:
 # * order follows m3wndw input convention
@@ -36,32 +38,13 @@ window.bounds.latlon <- c(-96, -90, 39, 45)
 # temporary file for m3wndw input
 m3wndw.input.fp <- system('mktemp', intern=TRUE)
 
-# plot-related vars
-# the data variable of interested
-datavar.name <- "DN2"
+# do we want to plot?
 plot.layers <- FALSE
-image.fp <- "./compare.DN2.layers.pdf"
-map.table <- '../GIS/map.CMAQkm.world.dat'
-
 # package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
 # used for quantiling legend
 probabilities.vec <- seq(0, 1, 1.0/(length(palette.vec) - 1))
-
-# functions-----------------------------------------------------------
-
-# foo
-foo <- function(
-  foo
-) {
-} # end function report.mismatches
-
-# main----------------------------------------------------------------
-
-# 1 Setup: open connections and devices, load data
-#   See http://rosettacode.org/wiki/Command-line_arguments#R
-#   TODO: check arguments
 
 # Read the commandline arguments
 args <- (commandArgs(TRUE))
@@ -87,10 +70,21 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('windowEmissions.r: plotting layers\n')
+
+  # plot-related vars: TODO: move me to a separate file!
+  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+
   source('./plotLayersForTimestep.r')
 } else {
   cat('windowEmissions.r: not plotting layers\n')
 }
+
+# main----------------------------------------------------------------
+
+# 1 Setup: open connections and devices, load data
+#   See http://rosettacode.org/wiki/Command-line_arguments#R
+#   TODO: check arguments
 
 # debugging
 # print('window.bounds.latlon==') ; print(window.bounds.latlon)

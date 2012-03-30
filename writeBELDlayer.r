@@ -45,8 +45,6 @@ beld.fp <- "./BELD4crops_12km_6_13_11_LimeiRan.rds"
 
 # plot-related vars
 plot.layers <- FALSE
-image.fp <- "./compare.DN2.layers.pdf"
-map.table <- '../GIS/map.CMAQkm.world.dat'
 # package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
@@ -102,6 +100,11 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('writeBELDlayer.r: plotting layers\n')
+
+  # plot-related vars: TODO: move me to a separate file!
+  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+
   source('./plotLayersForTimestep.r')
 } else {
   cat('writeBELDlayer.r: not plotting layers\n')
