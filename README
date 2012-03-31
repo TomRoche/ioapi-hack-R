@@ -1,4 +1,4 @@
-This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files. The top-level driver is a bash file, which drives two common sets of netCDF-aware tools:
+This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files. The top-level driver is a bash script (computeCropSum.sh), which mostly drives two sets of netCDF-aware tools:
 
 1 NCO
 
@@ -9,14 +9,16 @@ http://nco.sourceforge.net/
 http://cirrus.ucsd.edu/~pierce/ncdf/
 http://cran.r-project.org/web/packages/M3/
 
-  Note that package=M3 requires (et al) package=ncdf4, which requires netCDF 4.
+  Note that package=M3 requires (among others) package=ncdf4, which requires netCDF 4.
 
-For testing purposes, this project also uses
+For IOAPI testing, this project also uses
 
 3 m3tools, specifically m3stat and m3wndw
 
 www.baronams.com/products/ioapi/M3STAT.html
 www.baronams.com/products/ioapi/M3WNDW.html
+
+For display, this project also uses
 
 4 R package=fields
 
