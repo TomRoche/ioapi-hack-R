@@ -28,11 +28,11 @@ http://www.image.ucar.edu/Software/Fields/
 
 Since the code requires bash and netCDF 4, you may have difficulty running on windows: cygwin may be helpful. (If you're only interested in reading the most-IOAPI-aware code, see ioapi.r.) To run the example,
 
-0 Ensure you are properly setup. Check your
+0 Ensure you have proper dependencies. Check your
 
-* permissions: all the .r and .sh should be executable by your user.
-* NCO: should be uplevel and in the path
-* R: it should be uplevel, in the path, and include the above packages
+* NCO: should be uplevel (I have version=4.0.5, latest=4.1.0) and in the path
+* R: it should be uplevel (I have version=2.14.0, latest=2.15.0), in the path, and include the above packages
+* bash: should be uplevel (I have version=3.2.25, latest=4.2) and your shell (always :-)
 * m3tools: should be uplevel and in path
 * PDF viewer: edit the driver script to call yours (or comment it out)
 
