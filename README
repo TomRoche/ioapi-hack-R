@@ -1,49 +1,154 @@
-This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files, using two common netCDF tools, NCO
+This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files. The top-level driver is a bash file, which drives two common sets of netCDF-aware tools:
+
+1 NCO
 
 http://nco.sourceforge.net/
 
-and R, specifically with packages 'ncdf4'
+2 R, specifically packages=ncdf4, M3
 
 http://cirrus.ucsd.edu/~pierce/ncdf/
+http://cran.r-project.org/web/packages/M3/
 
-and 'fields' (for plotting)
+  Note that package=M3 requires (et al) package=ncdf4, which requires netCDF 4.
+
+For testing purposes, this project also uses
+
+3 m3tools, specifically m3stat and m3wndw
+
+www.baronams.com/products/ioapi/M3STAT.html
+www.baronams.com/products/ioapi/M3WNDW.html
+
+4 R package=fields
 
 http://www.image.ucar.edu/Software/Fields/
 
-(It also uses a PDF viewer to display produced plots, and m3tools/m3stat from
+5 a commandline PDF viewer of your choice (edit the script, or comment out)
 
-www.baronams.com/products/ioapi/M3STAT.html
+Since the code requires bash and netCDF 4, you may have difficulty running on windows: cygwin may be helpful. (If you're only interested in reading the most-IOAPI-aware code, see ioapi.r.) To run the example,
 
-for "IOAPI verification," though it's more slack than VERDI. These can be commented out if desired.) To use it,
+0 Ensure you are properly setup. Check your
 
-1 Create your git repository and fork the code. Read it (starting with the driver script computeCropSum.sh) while you ...
+* permissions: all the .r and .sh should be executable by your user.
+* NCO: should be uplevel and in the path
+* R: it should be uplevel, in the path, and include the above packages
+* m3tools: should be uplevel and in path
+* PDF viewer: edit the driver script to call yours (or comment it out)
 
-2 Download the source netCDF from
+1 Fork the git repository, which will create a folder for following activity.
+  E.g. (in bash),
+
+$ rm -fr /tmp/ioapi-hack-R/
+$ pushd /tmp
+/tmp $ env GIT_SSL_NO_VERIFY=true git clone https://TomRoche@github.com/TomRoche/ioapi-hack-R.git
+> Cloning into 'ioapi-hack-R'...
+> remote: Counting objects: 29, done.
+> remote: Compressing objects: 100% (22/22), done.
+> remote: Total 29 (delta 9), reused 27 (delta 7)
+> Unpacking objects: 100% (29/29), done.
+/tmp $ popd ; pushd /tmp/ioapi-hack-R/
+
+  The folder contents should resemble
+
+> drwxr-xr-x  you  yours  4.0K  date  time  .
+> -rwxr-xr-x  you  yours  6.6K  date  time  beldRead.r
+> -rwxr-xr-x  you  yours   963  date  time  beldToRDS.r
+> -rw-r--r--  you  yours   15K  date  time  computeCropSum.r
+> -rwxr-xr-x  you  yours   13K  date  time  computeCropSum.sh
+> -rw-r--r--  you  yours  6.2K  date  time  demonotonicizeVar.r
+> drwxr-xr-x  you  yours  4.0K  date  time  .git
+> -rw-r--r--  you  yours   120  date  time  .gitignore
+> -rw-r--r--  you  yours   16K  date  time  ioapi.r
+> -rwxr-xr-x  you  yours  3.8K  date  time  plotLayersForTimestep.r
+> -rw-r--r--  you  yours  6.5K  date  time  processLayers.r
+> -rw-r--r--  you  yours  6.1K  date  time  processVars.r
+> -rw-r--r--  you  yours  1.7K  date  time  README
+> -rw-r--r--  you  yours  1.8K  date  time  tlrRutilities.r
+> -rw-r--r--  you  yours  8.4K  date  time  windowEmissions.r
+> -rw-r--r--  you  yours  8.1K  date  time  writeBELDlayer.r
+
+2 Download the input data from
 
 https://github.com/TomRoche/ioapi-hack-R/downloads
 
-  to the same folder.
+  E.g. (in bash),
 
-3 Check your
+URI_ROOT="https://github.com/downloads/TomRoche/ioapi-hack-R"
+DIR="/tmp/ioapi-hack-R"
+for FN in \
+  "map.CMAQkm.world.dat" \
+  "BELD4crops_12km_6_13_11.csv" \
+  "BELD4crops_12km_6_13_11_LimeiRan.rds" \
+  "5yravg.test.nc" \
+; do
+  URI="${URI_ROOT}/${FN}"
+  FP="${DIR}/${FN}" # file path
+  # curl can't handle the redirects, so use wget
+#  ARGS="-c -O ${FP}"
+  # for broken-cert environments (like EPA terrae) use '--no-check-certificate'
+  ARGS="--no-check-certificate -c -O ${FP}"
+  for CMD in \
+    "wget ${ARGS} ${URI}" \
+  ; do
+    echo -e "$ ${CMD}"
+    eval "${CMD}"
+  done
+done
 
-* permissions: all the .r and .sh should be executable by your user.
-* NCO: it should be uplevel and in the path
-* R: it should be uplevel, in the path, and include package=ncdf4
-* PDF viewer: edit the driver script to call yours (or comment it out)
-* m3tools/m3stat: uplevel and in path (or comment it out)
+  The folder contents should resemble
 
-4 Run it: with everything in that folder, and with it==$(pwd)
+-rwxr-xr-x  you  yours  6.6K  date  time  beldRead.r
+-rwxr-xr-x  you  yours   963  date  time  beldToRDS.r
+-rw-r--r--  you  yours   15K  date  time  computeCropSum.r
+-rwxr-xr-x  you  yours   13K  date  time  computeCropSum.sh
+-rw-r--r--  you  yours  6.2K  date  time  demonotonicizeVar.r
+drwxr-xr-x  you  yours  4.0K  date  time  .git
+-rw-r--r--  you  yours   120  date  time  .gitignore
+-rw-r--r--  you  yours   16K  date  time  ioapi.r
+-rwxr-xr-x  you  yours  3.8K  date  time  plotLayersForTimestep.r
+-rw-r--r--  you  yours  6.5K  date  time  processLayers.r
+-rw-r--r--  you  yours  6.1K  date  time  processVars.r
+-rw-r--r--  you  yours  1.7K  date  time  README
+-rw-r--r--  you  yours  1.8K  date  time  tlrRutilities.r
+-rw-r--r--  you  yours  8.4K  date  time  windowEmissions.r
+-rw-r--r--  you  yours  8.1K  date  time  writeBELDlayer.r
+-rw-r--r--  you  yours  1.1M  date  time  map.CMAQkm.world.dat
+-rw-r--r--  you  yours  1.5M  date  time  BELD4crops_12km_6_13_11_LimeiRan.rds
+-rw-r--r--  you  yours  5.5M  date  time  BELD4crops_12km_6_13_11.csv
+-rw-r--r--  you  yours  638M  date  time  5yravg.test.nc
 
-./computeCropSum.sh
+3 Run it: e.g.,
 
-  It should produce a new netCDF file named '5yravg.DN2summed.nc' with
+/tmp/ioapi-hack-R $ ./computeCropSum.sh
 
-* many fewer datavars than the source NetCDF: in fact, only one other than the IOAPI "metadatavar" TFLAG
+  It should produce
 
-* 2 more blank layers in its datavar than in the same datavar in the source netCDF.
+3.1 a ginormous console trace, at times paused
 
-  as well as a plot file.
+3.2 several new netCDF files, e.g.,
 
-5 Improve it: the code is currently pretty crude, so feel free to fix/extend, and give me a pull request.
+-rw-r--r--  you  yours  400K  date  time  5yravg.DN2windowed.nc
+-rw-r--r--  you  yours   24M  date  time  5yravg.DN2summed.nc
+-rw-r--r--  you  yours   24M  date  time  5yravg.DN2belded.nc
+-rw-r--r--  you  yours   24M  date  time  5yravg.DN2layers_fixed.nc
+-rw-r--r--  you  yours   24M  date  time  5yravg.DN2layered.nc
+-rw-r--r--  you  yours  1.1M  date  time  temp.extend.nc
+-rw-r--r--  you  yours   24M  date  time  temp.full.nc
+-rw-r--r--  you  yours   22M  date  time  5yravg.DN2demonotonicized.nc
+-rw-r--r--  you  yours   22M  date  time  5yravg.DN2vars_fixed.nc
+-rw-r--r--  you  yours   22M  date  time  5yravg.DN2stripped.nc
+
+    The main output is '5yravg.DN2windowed.nc', which you should be able to open with VERDI (the point of the IOAPI part of this exercise :-) Compared to the source NetCDF (5yravg.test.nc), that output
+
+*   covers a smaller horizontal extent
+
+*   has many fewer datavars: in fact, only one (DN2) other than the IOAPI "metadatavar" TFLAG.
+
+3.3 a plot file containing plots of each data layer in the window, plus
+
+*   a plot of the sum of the BELD proportions in each gridcell (penultimate layer)
+
+*   a plot of the integrated DN2 emissions over each gridcell (final layer)
+
+After you run it, improve it! The code is currently quite crude, so feel free to fix/extend--and then send me pull request!
 
 HTH, Tom Roche <Tom_Roche@pobox.com>
