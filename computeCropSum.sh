@@ -81,10 +81,10 @@ DIM_TO_SUM="LAY"   # along which we want to sum
 VAR_MISSING_VALUE='-9.999e+36'
 let N_LAYERS_TO_CREATE=2 # BELD and sum
 
-BELD_TAG="12km_6_13_11_LimeiRan"
+BELD_TAG="0529_USA_2Ellen"
 BELD_DIR="${THIS_DIR}"
 # RDS is R serialization format
-BELD_FN="BELD4crops_${BELD_TAG}.rds"
+BELD_FN="epic_site_crops_${BELD_TAG}.rds"
 BELD_FP="${BELD_DIR}/${BELD_FN}"
 
 EPIC_DIR="${THIS_DIR}"

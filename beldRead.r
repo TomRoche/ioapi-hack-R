@@ -10,8 +10,10 @@
 # All subsequent (data) lines have the form
 # [gridcell ID, % cover of crop ID on that gridcell]
 
-# > 5718,0.3,0.47,0,0,0,0,0,0,0,0,0.08,0.37,0,0,0.83,1.55,0,0,0,0,0,0,0,0,0,0.00,2.48,2.33,0.17,0,0,0,0,0,0,0.00,10.69,0.18,0,0,0,0
-# > 6176,1.91,2.98,0,0,0.01,0,0,0,0,0,0.05,0.25,0,0,0.56,1.04,0,0,0,0,0,0,0,0,0,0.00,1.67,1.57,0.12,0,0,0,0,0,0,0.00,6.83,0.12,0,0,0,0
+# > 5718,0.3,0.47,0,0,0,0,0,0,0,0,0.08,0.37,0,0,0.83,1.55,0,0,0,0,0,0,0,0,0,0.00,2.48,2.33,0.17,0,0,0,0,0,0,0.00,10.69,0.18,0,0,0,0...
+# > 6176,1.91,2.98,0,0,0.01,0,0,0,0,0,0.05,0.25,0,0,0.56,1.04,0,0,0,0,0,0,0,0,0,0.00,1.67,1.57,0.12,0,0,0,0,0,0,0.00,6.83,0.12,0,0,0,0...
+
+# where the number of fields read/used in each line == n.data.fields (below). ALL SUBSEQUENT FIELDS WILL BE IGNORED.
 
 # The gridcell ID maps to EPIC (or other 12km CONUS LCC grids) like
 # Ran, Limei Wed, 22 Feb 2012 14:24:17 +0000
@@ -20,7 +22,8 @@
 
 # The following functions seek to
 
-# 1 strip the header
+# 1 strip the header (which has length==n.header.lines)
+
 # 2 convert the data into a 3D array more consumable for emissions calculations, with dimensions
 # cols x rows x layers
 # where
@@ -94,7 +97,7 @@ int2gridcell <- function(
 # * layers == proportion of the crop specie represented by that layer
 #   present in the gridcell with index == [cols, rows]
 
-beld.read <- function(beld.fp, datavar.dim) {
+beld.read <- function(beld.fp, datavar.dim, n.header.lines, n.data.fields, list.line.types) {
   datavar.cols.n <- datavar.dim[1]
   datavar.rows.n <- datavar.dim[2]
   datavar.layers.n <- datavar.dim[3]
@@ -102,7 +105,6 @@ beld.read <- function(beld.fp, datavar.dim) {
   beld.array <- rep(NA, datavar.cols.n * datavar.rows.n * datavar.layers.n)
   dim(beld.array) <- c(datavar.cols.n, datavar.rows.n, datavar.layers.n)
 
-  LINE.LEN <- datavar.layers.n + 1 # number of values in a good line
   i.lines <- 0
   n.lines <- 0
   i.errors <- 0
@@ -117,17 +119,23 @@ beld.read <- function(beld.fp, datavar.dim) {
 
   while (length(line <- readLines(beld.con, 1)) > 0) {
     i.lines <- i.lines + 1
-    if (i.lines == 1) { next } # skip header
+    if (i.lines <= n.header.lines) { next } # skip header, could also do with scan(..., skip=n.header.lines)
 # debugging
 #    print(paste(i.lines,':', line))
     # parse comma-separated variables
-    raw <- scan(textConnection(line), sep=",", quiet=TRUE)
-    if ((class(raw) == "numeric") && (length(raw) == LINE.LEN)) {
-
-      # process good line
-      i.gridcell <- raw[1]
+    raw <- scan(textConnection(line), sep=",", quiet=TRUE, what=list.line.types)
+    if (length(raw) >= n.data.fields) {
+      # process good line:
+      # note that, if typeof(raw)==list, must cast to numeric (vector)
+      i.gridcell <- as.numeric(raw[1])
+      beld.data.raw <- as.numeric(raw[2:n.data.fields])
+# start debugging
+#      print(paste('beldRead: typeof(beld.data.raw)=', typeof(beld.data.raw)))
+#      print(paste('beldRead: beld.data.raw=', beld.data.raw))
+#   end debugging
+      
       # raw BELD data is percentage, convert to proportion
-      beld.data <- raw[2:length(raw)] / 100.0
+      beld.data <- beld.data.raw / 100.0
       colrow <- int2gridcell(i.gridcell,
                   datavar.cols.n, datavar.rows.n,
                   datavar.cols.n * datavar.rows.n)
@@ -149,7 +157,7 @@ beld.read <- function(beld.fp, datavar.dim) {
       } else {
         # bad line. TODO: throw
         print(paste(
-          'ERROR: line#=', i.lines, 'i.gridcell=', i.gridcell,
+          'ERROR: beldRead: line#=', i.lines, 'i.gridcell=', i.gridcell,
            '-> i.rows=', i.rows, ', i.cols=', i.cols))
       } # end testing line processing
 
@@ -158,7 +166,7 @@ beld.read <- function(beld.fp, datavar.dim) {
       i.errors <- i.errors + 1
       error.line.numbers[i.errors] <- i.lines
       print(paste(
-        'ERROR: line#=', i.lines, 'length=', length(raw), 'class=', class(raw)))
+        'ERROR: beldRead: line#=', i.lines, 'length=', length(raw), 'class=', class(raw)))
       print(paste('line=', line))
     } # end testing raw scan
     n.lines <- i.lines

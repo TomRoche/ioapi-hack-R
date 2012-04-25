@@ -78,8 +78,8 @@ URI_ROOT="https://github.com/downloads/TomRoche/ioapi-hack-R"
 DIR="/tmp/ioapi-hack-R"
 for FN in \
   "map.CMAQkm.world.dat" \
-  "BELD4crops_12km_6_13_11.csv" \
-  "BELD4crops_12km_6_13_11_LimeiRan.rds" \
+  "epic_site_crops_0529_USA_2Ellen.csv" \
+  "epic_site_crops_0529_USA_2Ellen.rds" \
   "5yravg.test.nc" \
 ; do
   URI="${URI_ROOT}/${FN}"
@@ -114,8 +114,8 @@ drwxr-xr-x  you  yours  4.0K  date  time  .git
 -rw-r--r--  you  yours  8.4K  date  time  windowEmissions.r
 -rw-r--r--  you  yours  8.1K  date  time  writeBELDlayer.r
 -rw-r--r--  you  yours  1.1M  date  time  map.CMAQkm.world.dat
--rw-r--r--  you  yours  1.5M  date  time  BELD4crops_12km_6_13_11_LimeiRan.rds
--rw-r--r--  you  yours  5.5M  date  time  BELD4crops_12km_6_13_11.csv
+-rw-r--r--  you  yours  1.5M  date  time  epic_site_crops_0529_USA_2Ellen.rds
+-rw-r--r--  you  yours  5.5M  date  time  epic_site_crops_0529_USA_2Ellen.csv
 -rw-r--r--  you  yours  638M  date  time  5yravg.test.nc
 
 3 Run it: e.g.,
