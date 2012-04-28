@@ -141,10 +141,12 @@ for (i.timestep in 1:datavar.timesteps.n) {
 # i.layer <- 1
     input.data <- input.timestep[,,i.layer]
     if (is.element(i.layer, layers.n.good)) {
+      # debugging
+      cat(sprintf('ignoring layer#==%2i\n', i.layer))
       output.timestep[,,i.layer] <- input.data
     } else {
       # debugging
-#      cat(sprintf('processing layer#==%2i\n', i.layer))
+      cat(sprintf('processing layer#==%2i\n', i.layer))
       output.timestep[,,i.layer] <- demonotonicize.layer(input.data)
     }
   } # end looping over layer#s

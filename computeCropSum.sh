@@ -78,7 +78,10 @@ DIM_TO_SUM="LAY"   # along which we want to sum
 # Following is only required to make NCO happy:
 # NCO requires datavars with attribute=missing_value to also have attribute=_FillValue
 # TODO: find out how to get this programmatically!
-VAR_MISSING_VALUE='-9.999e+36'
+VAR_MISSING_VALUE_NAME='missing_value'
+VAR_MISSING_VALUE_VAL='-9.999e+36'
+VAR_MISSING_VALUE_PREC='float'
+
 let N_LAYERS_TO_CREATE=2 # BELD and sum
 
 BELD_TAG="0529_USA_2Ellen"
@@ -86,6 +89,10 @@ BELD_DIR="${THIS_DIR}"
 # RDS is R serialization format
 BELD_FN="epic_site_crops_${BELD_TAG}.rds"
 BELD_FP="${BELD_DIR}/${BELD_FN}"
+
+# R vector of indices of layers not to demonotonicize
+# LAYERS_N_GOOD="c(1)" # ignore layer=1, demonotonicize the rest
+LAYERS_N_GOOD="c(0)"   # demonotonicize all layers
 
 EPIC_DIR="${THIS_DIR}"
 # EPIC_ORIGINAL has
@@ -169,7 +176,7 @@ function setup {
 # *AND* gotta fix
 # * coordinate var=VAR
 # * global attr=VAR-LIST
-#    "ncatted -O -a _FillValue,${VAR_NAME},o,f,${VAR_MISSING_VALUE} ${EPIC_STRIPPED_FP}" \
+#    "ncatted -O -a _FillValue,${VAR_NAME},o,f,${VAR_MISSING_VALUE_VAL} ${EPIC_STRIPPED_FP}" \
 # Note I copy files to output, *then* work on them, because that's what
 # R package=ncdf4 seems to want.
 function stripOtherDatavars {
@@ -205,6 +212,7 @@ function demonotonicizeDatavar {
     "R CMD BATCH --vanilla --slave '--args \
 datavar.name=\"${VAR_NAME}\" \
 plot.layers=FALSE \
+layers.n.good=${LAYERS_N_GOOD} \
 epic.input.fp=\"${EPIC_VARS_FIXED_FP}\" \
 epic.output.fp=\"${EPIC_DEMONOTONICIZED_FP}\"' \
 ${DEMONOTONICIZE_SCRIPT} ${TEMPFILE}" \
@@ -325,6 +333,9 @@ window.bounds.latlon=c(${WEST_LON},${EAST_LON},${SOUTH_LAT},${NORTH_LAT}) \
 m3wndw.input.fp=\"${M3WNDW_INPUT_FP}\" \
 m3wndw.command.space.replacer=\"${M3WNDW_COMMAND_SPACE_REPLACER}\" \
 m3wndw.command.space.replaced=\"${M3WNDW_COMMAND_SPACE_REPLACED}\" \
+attr.name=\"${VAR_MISSING_VALUE_NAME}\" \
+attr.val=${VAR_MISSING_VALUE_VAL} \
+attr.prec=\"${VAR_MISSING_VALUE_PREC}\" \
 plot.layers=TRUE \
 image.fp=\"${PDF_FP}\"' \
 ${WINDOW_SCRIPT} ${TEMPFILE}" \
@@ -334,6 +345,33 @@ ${WINDOW_SCRIPT} ${TEMPFILE}" \
     eval "${CMD}"
   done
   export M3STAT_FILE="${EPIC_WINDOWED_FP}"
+}
+
+# Used to search for where we're losing var attr=missing_value
+# Don't use return value, rely on side effect on stdout
+function findAttributeInFile {
+  ATTR_NAME="$1" # mandatory argument=attribute name
+  NC_FP="$2"     # mandatory argument=path to a netCDF file
+  if [[ -z "${ATTR_NAME}" ]] ; then
+    echo "ERROR: findAttribute: blank or missing attribute name"
+    return 1
+  fi
+  if [[ -z "${NC_FP}" ]] ; then
+    echo "ERROR: findAttribute: blank or missing path to netCDF file"
+    return 2
+  fi
+  if [[ ! -r "${NC_FP}" ]] ; then
+    echo "ERROR: findAttribute: cannot read netCDF file='${NC_FP}'"
+    return 3
+  fi
+
+  # TODO: test these are in path
+  for CMD in \
+    "ncdump -h ${NC_FP} | fgrep -e '${ATTR_NAME}'" \
+  ; do
+    echo -e "$ ${CMD}"
+    eval "${CMD}"
+  done
 }
 
 function teardown {
@@ -387,9 +425,23 @@ for CMD in \
   "windowSummedFile" \
   "teardown" \
 ; do
-  echo -e "\n${CMD}"
+  echo -e "\n$ ${CMD}"
   eval "${CMD}"
-  ls -alth *.nc
+  # start debugging
+  # show
+  # * newest netCDF file
+  # * whether it contains the desired attribute
+  NEWEST_NC_FP="$(ls -1t ${EPIC_DIR}/*.nc | head -n 1)"
+  ATTR_NAME='missing_value'
+  for CMD in \
+    "ls -alh ${NEWEST_NC_FP}" \
+    "findAttributeInFile '${ATTR_NAME}' '${NEWEST_NC_FP}' | wc -l" \
+    "findAttributeInFile '${ATTR_NAME}' '${NEWEST_NC_FP}'" \
+  ; do
+    echo -e "$ ${CMD}"
+    eval "${CMD}"
+  done
+  #   end debugging
 done
 
 # debugging-----------------------------------------------------------

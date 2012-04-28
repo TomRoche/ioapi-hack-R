@@ -46,6 +46,11 @@ colors <- colorRampPalette(palette.vec)
 # used for quantiling legend
 probabilities.vec <- seq(0, 1, 1.0/(length(palette.vec) - 1))
 
+# Problem with stripping this attribute, below
+attr.name <- "missing_value"
+attr.prec <- "float"
+attr.val <- -9.999e+36
+
 # Read the commandline arguments
 args <- (commandArgs(TRUE))
 
@@ -156,8 +161,41 @@ system(m3wndw.command)
 # ... and use resulting file, if we're plotting.
 # TODO: test for creation of data.output.fp!
 
+# Problem:
+# + before this script, we have var attr=DN2:missing_value
+# -  after this script, we lack var attr=DN2:missing_value
+# start debugging
+data.output.file <- nc_open(data.output.fp, write=TRUE, readunlim=FALSE)
+attr.list <-
+  ncatt_get(data.output.file, varid=datavar.name, attname=attr.name)
+if (attr.list$hasatt) {
+  cat(sprintf('windowEmissions.r: after M3WNDW, var=%s HAS attr=%s',
+              datavar.name, attr.name))
+} else {
+  cat(sprintf('windowEmissions.r: after M3WNDW, var=%s LACKS attr=%s',
+              datavar.name, attr.name))
+  # restore it
+  ncatt_put(data.output.file, varid=datavar.name,
+            attname=attr.name, attval=attr.val, prec=attr.prec)
+  # test restoration
+  attr.list <-
+    ncatt_get(data.output.file, varid=datavar.name, attname=attr.name)
+  if (attr.list$hasatt) {
+    cat(sprintf(
+      'windowEmissions.r: succeeded in restoring attr=%s on var=%s\n',
+      datavar.name, attr.name))
+  } else {
+    cat(sprintf(
+      'windowEmissions.r: ERROR: failed to restore attr=%s on var=%s\n',
+      datavar.name, attr.name))
+  }
+} # end testing if output file has desired attribute
+nc_close(data.output.file)
+#   end debugging
+
 if (plot.layers) {
-  data.output.file <- nc_open(data.output.fp, write=TRUE, readunlim=FALSE)
+  # we're only plotting, so write=FALSE
+  data.output.file <- nc_open(data.output.fp, write=FALSE, readunlim=FALSE)
   data.output.datavar <- ncvar_get(data.output.file, varid=datavar.name)
 
   # setup plot files
