@@ -19,16 +19,25 @@ plot.layers.for.timestep <- function(
 # debugging
 # i.layer <- 1
 
+    # get title string:
+    # first, minimally:
+    title <- sprintf('%s: layer#=%2i', datavar.name, i.layer)
+#    title <- sprintf('%s: layer#=%2i (%s) # when we have the crop name
+    attr.list <-
+      ncatt_get(datavar.parent, varid=datavar.name, attname="units")
+    if (attr.list$hasatt) {
+      title <- sprintf('%s, units=%s', title, attr.list$value)
+    } else {
+      cat(sprintf(
+        'plot.layers.for.timestep: ERROR: no units for var=%s\n',
+        datavar.name))
+    }
+
 #    data <- datavar[,,i.layer,i.timestep]
     data <- datavar[,,i.layer]
 # start debugging for Doug Nychka Mon, 13 Feb 2012 21:33:36 -0700
 #    print(paste('class(data)==', class(data), sep=""))
 #   end debugging for Doug Nychka Mon, 13 Feb 2012 21:33:36 -0700
-    title <- paste(
-      datavar.name, ": ",
-      "Timestep: ", i.timestep, ", ",
-      "Layer: ", i.layer,
-      sep="")
     plot.layer(data, title, attrs.list, q.vec, colors, map)
   } # end interating layers
 } # end function plot.layers.for.timestep
