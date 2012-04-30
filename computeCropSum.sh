@@ -191,7 +191,8 @@ function stripOtherDatavars {
 datavar.name=\"${VAR_NAME}\" \
 plot.layers=FALSE \
 epic.input.fp=\"${EPIC_STRIPPED_FP}\" \
-epic.output.fp=\"${EPIC_VARS_FIXED_FP}\"' \
+epic.output.fp=\"${EPIC_VARS_FIXED_FP}\" \
+' \
 ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
   ; do
@@ -214,7 +215,8 @@ datavar.name=\"${VAR_NAME}\" \
 plot.layers=FALSE \
 layers.n.good=${LAYERS_N_GOOD} \
 epic.input.fp=\"${EPIC_VARS_FIXED_FP}\" \
-epic.output.fp=\"${EPIC_DEMONOTONICIZED_FP}\"' \
+epic.output.fp=\"${EPIC_DEMONOTONICIZED_FP}\" \
+' \
 ${DEMONOTONICIZE_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
   ; do
@@ -276,7 +278,8 @@ datavar.name=\"${VAR_NAME}\" \
 plot.layers=FALSE \
 epic.input.fp=\"${EPIC_LAYERS_FIXED_FP}\" \
 beld.fp=\"${BELD_FP}\" \
-epic.output.fp=\"${EPIC_BELDED_FP}\"' \
+epic.output.fp=\"${EPIC_BELDED_FP}\" \
+' \
 ${BELD_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
   ; do
@@ -299,7 +302,7 @@ plot.layers=FALSE \
 epic.input.fp=\"${EPIC_BELDED_FP}\" \
 beld.fp=\"${BELD_FP}\" \
 epic.output.fp=\"${EPIC_SUMMED_FP}\" \
-image.fp=\"${PDF_FP}\"' \
+' \
 ${SUM_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
   ; do
@@ -337,7 +340,8 @@ attr.name=\"${VAR_MISSING_VALUE_NAME}\" \
 attr.val=${VAR_MISSING_VALUE_VAL} \
 attr.prec=\"${VAR_MISSING_VALUE_PREC}\" \
 plot.layers=TRUE \
-image.fp=\"${PDF_FP}\"' \
+image.fp=\"${PDF_FP}\" \
+' \
 ${WINDOW_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
   ; do
@@ -428,19 +432,19 @@ for CMD in \
   echo -e "\n$ ${CMD}"
   eval "${CMD}"
   # start debugging
-  # show
-  # * newest netCDF file
-  # * whether it contains the desired attribute
-  NEWEST_NC_FP="$(ls -1t ${EPIC_DIR}/*.nc | head -n 1)"
-  ATTR_NAME='missing_value'
-  for CMD in \
-    "ls -alh ${NEWEST_NC_FP}" \
-    "findAttributeInFile '${ATTR_NAME}' '${NEWEST_NC_FP}' | wc -l" \
-    "findAttributeInFile '${ATTR_NAME}' '${NEWEST_NC_FP}'" \
-  ; do
-    echo -e "$ ${CMD}"
-    eval "${CMD}"
-  done
+#  # show
+#  # * newest netCDF file
+#  # * whether it contains the desired attribute
+#  NEWEST_NC_FP="$(ls -1t ${EPIC_DIR}/*.nc | head -n 1)"
+#  ATTR_NAME='missing_value'
+#  for CMD in \
+#    "ls -alh ${NEWEST_NC_FP}" \
+#    "findAttributeInFile '${ATTR_NAME}' '${NEWEST_NC_FP}' | wc -l" \
+#    "findAttributeInFile '${ATTR_NAME}' '${NEWEST_NC_FP}'" \
+#  ; do
+#    echo -e "$ ${CMD}"
+#    eval "${CMD}"
+#  done
   #   end debugging
 done
 
