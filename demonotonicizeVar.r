@@ -169,8 +169,15 @@ for (i.timestep in 1:datavar.timesteps.n) {
 #      i.timestep, datavar.layers.n))
     output.datavar <- ncvar_get(output.file, varid=datavar.name)
     plot.layers.for.timestep(
-      output.datavar, datavar.name, i.timestep, datavar.layers.n,
-      attrs.list, probabilities.vec, colors, map)
+      datavar=output.datavar,
+      datavar.name=datavar.name,
+      datavar.parent=output.file,
+      i.timestep=i.timestep,
+      n.layers=datavar.layers.n,
+      attrs.list=attrs.list,
+      q.vec=probabilities.vec,
+      colors=colors,
+      map=map)
   }
 } # end for timesteps
 

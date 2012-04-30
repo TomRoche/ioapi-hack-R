@@ -237,28 +237,26 @@ if (plot.layers) {
   # print('start==') ; print(start)
   # print('count==') ; print(count)
   #   end debugging
+  # don't need to use start and count:
+  # M3WNDW is doing the manipulating, we're only plotting
 
   for (i.timestep in 1:datavar.timesteps.n) {
 #i.timestep <- 1
-    # Initialize start and count to read one timestep of the variable:
-    # start=(1,1,1,i), count=(COL,ROW,LAY,i)
-    start[datavar.dims.n] <- i.timestep
-    count[datavar.dims.n] <- i.timestep
-# start debugging
-#   cat(sprintf('for timestep==%i\n', i.timestep))
-# TODO: get output all on one line
-#   print('start==') ; print(start)
-#   print('count==') ; print(count)
-#   end debugging
-    data.output.timestep <- ncvar_get(data.output.file, varid=datavar.name, start=start, count=count)
 
   # plot timestep
   # debugging
 #    cat(sprintf('windowEmissions.r: plot.layers.for.timestep==%i, n.layers==%i\n',
 #      i.timestep, datavar.layers.n))
     plot.layers.for.timestep(
-      data.output.datavar, datavar.name, i.timestep, datavar.layers.n,
-      attrs.list, probabilities.vec, colors, map)
+      datavar=data.output.datavar,
+      datavar.name=datavar.name,
+      datavar.parent=data.output.file,
+      i.timestep=i.timestep,
+      n.layers=datavar.layers.n,
+      attrs.list=attrs.list,
+      q.vec=probabilities.vec,
+      colors=colors,
+      map=map)
   } # end for timesteps
 
 } # end testing plot.layers

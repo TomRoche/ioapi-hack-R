@@ -156,8 +156,15 @@ if (plot.layers) {
       i.timestep, datavar.layers.n))
     epic.output.datavar <- ncvar_get(epic.output.file, varid=datavar.name)
     plot.layers.for.timestep(
-      epic.output.datavar, datavar.name, i.timestep, datavar.layers.n,
-      attrs.list, probabilities.vec, colors, map)
+      datavar=epic.output.datavar,
+      datavar.name=datavar.name,
+      datavar.parent=epic.output.file,
+      i.timestep=i.timestep,
+      n.layers=datavar.layers.n,
+      attrs.list=attrs.list,
+      q.vec=probabilities.vec,
+      colors=colors,
+      map=map)
   } # end for timesteps
 } # end if plotting
 

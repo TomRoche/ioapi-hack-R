@@ -7,14 +7,15 @@ library(fields)
 plot.layers.for.timestep <- function(
   datavar,          # data variable
   datavar.name,     # string naming the datavar # TODO: get from datavar
+  datavar.parent,   # file object containing the datavar
   i.timestep=1,     # index of timestep to plot
-  datavar.n.layers, # max number of layers (in timestep) to plot
+  n.layers=0,       # max number of layers (in timestep) to plot
   attrs.list,       # list of global attributes
-  probabilities.vec=NULL, # for quantiles # TODO: handle when null!
+  q.vec=NULL,       # for quantiles # TODO: handle when null!
   colors,
   map
 ) {
-  for (i.layer in 1:datavar.n.layers) {
+  for (i.layer in 1:n.layers) {
 # debugging
 # i.layer <- 1
 
@@ -28,7 +29,7 @@ plot.layers.for.timestep <- function(
       "Timestep: ", i.timestep, ", ",
       "Layer: ", i.layer,
       sep="")
-    plot.layer(data, title, attrs.list, probabilities.vec, colors, map)
+    plot.layer(data, title, attrs.list, q.vec, colors, map)
   } # end interating layers
 } # end function plot.layers.for.timestep
 
