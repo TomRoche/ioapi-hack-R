@@ -169,10 +169,10 @@ data.output.file <- nc_open(data.output.fp, write=TRUE, readunlim=FALSE)
 attr.list <-
   ncatt_get(data.output.file, varid=datavar.name, attname=attr.name)
 if (attr.list$hasatt) {
-  cat(sprintf('windowEmissions.r: after M3WNDW, var=%s HAS attr=%s',
+  cat(sprintf('windowEmissions.r: after M3WNDW, var=%s HAS attr=%s\n',
               datavar.name, attr.name))
 } else {
-  cat(sprintf('windowEmissions.r: after M3WNDW, var=%s LACKS attr=%s',
+  cat(sprintf('windowEmissions.r: after M3WNDW, var=%s LACKS attr=%s\n',
               datavar.name, attr.name))
   # restore it
   ncatt_put(data.output.file, varid=datavar.name,
