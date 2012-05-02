@@ -38,8 +38,11 @@ window.bounds.latlon <- c(-96, -90, 39, 45)
 # temporary file for m3wndw input
 m3wndw.input.fp <- system('mktemp', intern=TRUE)
 
-# do we want to plot?
+# plot-related vars. TODO: move me to a separate file!
 plot.layers <- FALSE
+image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+l2d.fp <- "./layer2description.rds"    # env mapping layer#s to crop descriptions
 # package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
@@ -75,11 +78,6 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('windowEmissions.r: plotting layers\n')
-
-  # plot-related vars: TODO: move me to a separate file!
-  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
-  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
-
   source('./plotLayersForTimestep.r')
 } else {
   cat('windowEmissions.r: not plotting layers\n')
@@ -255,6 +253,7 @@ if (plot.layers) {
       n.layers=datavar.layers.n,
       attrs.list=attrs.list,
       q.vec=probabilities.vec,
+      l2d.fp=l2d.fp,
       colors=colors,
       map=map)
   } # end for timesteps

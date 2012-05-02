@@ -65,10 +65,11 @@ epic.output.fp <- "./5yravg.DN2summed.nc"
 datavar.name <- "DN2"
 # path to serialized BELD array, as produced by beldToRDS
 beld.fp <- "./BELD4crops_12km_6_13_11_LimeiRan.rds"
-
-# plot-related vars
+# plot-related vars. TODO: move me to a separate file!
 plot.layers <- FALSE
-# package=grDevices
+image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+l2d.fp <- "./layer2description.rds"    # env mapping layer#s to crop descri# package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
 # used for quantiling legend
@@ -121,7 +122,7 @@ sum.emissions.for.layers <- function(
 # TODO: print(paste()) -> cat(sprintf())
     
 # start debugging
-#    cat(sprintf('No crop data for gridcell==[%3i,%3i]\n', i.col, i.row))
+#    cat(sprintf('computeCropSum.r: no crop data for gridcell==[%3i,%3i]\n', i.col, i.row))
 #   end debugging
     # write NA to the sum layer
     epic.vec[i.sum] <- NA
@@ -129,7 +130,7 @@ sum.emissions.for.layers <- function(
 #  if (!beld.nna) {
   if (is.vec.na.or.zero(beld.vec)) {
 # start debugging
-#    cat(sprintf('No BELD data for gridcell==[%3i,%3i]\n', i.col, i.row))
+#    cat(sprintf('computeCropSum.r: no BELD data for gridcell==[%3i,%3i]\n', i.col, i.row))
 #   end debugging
     epic.vec[i.sum] <- NA
   }
@@ -143,7 +144,7 @@ sum.emissions.for.layers <- function(
 
 # This does not happen ...
 #    if (is.na(result)) {
-#      cat(sprintf('ERROR: for gridcell==[%3i,%3i], both crop and BELD data are not empty, but their product==NA\n', i.col, i.row))
+#      cat(sprintf('ERROR: computeCropSum.r: for gridcell==[%3i,%3i], both crop and BELD data are not empty, but their product==NA\n', i.col, i.row))
 #      cat('crop data==\n')
 #      print(crops.vec)
 #      cat('BELD data==\n')
@@ -155,7 +156,7 @@ sum.emissions.for.layers <- function(
 # ... but this *does* happen, a lot:
 # TODO: trap these errors, halt, and examine
     if (result == 0) {
-#      cat(sprintf('ERROR: for gridcell==[%3i,%3i], both crop and BELD data are not empty, but their product==0\n', i.col, i.row))
+#      cat(sprintf('ERROR: computeCropSum.r: for gridcell==[%3i,%3i], both crop and BELD data are not empty, but their product==0\n', i.col, i.row))
 #      cat('crop data==\n')
 #      print(crops.vec)
 #      cat('BELD data==\n')
@@ -238,11 +239,6 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('computeCropSum.r: plotting layers\n')
-
-  # plot-related vars: TODO: move me to a separate file!
-  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
-  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
-
   source('./plotLayersForTimestep.r')
 } else {
   cat('computeCropSum.r: not plotting layers\n')
@@ -274,7 +270,7 @@ start <- rep(1,datavar.dims.n) # start=(1,1,1,...)
 # but if val=1, it is omitted from dim(epic.input.datavar), breaking Pierce-style read (below)
 if      (datavar.dims.n < 3) {
   # TODO: throw
-  print(paste('ERROR: datavar.dims.n==', datavar.dims.n))
+  print(paste('ERROR: computeCropSum.r: datavar.dims.n==', datavar.dims.n))
 } else if (datavar.dims.n == 3) {
   datavar.timesteps.n <- 1
   count <- c(dim(epic.input.datavar), 1)
@@ -287,7 +283,7 @@ if      (datavar.dims.n < 3) {
   datavar.dims.max.vec <- count
 } else {
   # TODO: throw
-  cat(sprintf('ERROR: datavar.dims.n==%i > 4\n', datavar.dims.n))
+  cat(sprintf('ERROR: computeCropSum.r: datavar.dims.n==%i > 4\n', datavar.dims.n))
 }
 # start debugging
 # print('initially:')
@@ -393,6 +389,7 @@ for (i.timestep in 1:datavar.timesteps.n) {
       n.layers=datavar.layers.n,
       attrs.list=attrs.list,
       q.vec=probabilities.vec,
+      l2d.fp=l2d.fp,
       colors=colors,
       map=map)
   }

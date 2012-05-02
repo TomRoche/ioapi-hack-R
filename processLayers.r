@@ -36,8 +36,11 @@ datavar.name <- "DN2"
 input.fp <- sprintf('./5yravg.%slayered.nc', datavar.name)
 output.fp <- sprintf('./5yravg.%slayers_fixed.nc', datavar.name)
 layers.add.n <- 2
-# plot-related vars
+# plot-related vars. TODO: move me to a separate file!
 plot.layers <- FALSE
+image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+l2d.fp <- "./layer2description.rds"    # env mapping layer#s to crop descriptions
 # package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
@@ -68,11 +71,6 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('processLayers.r: plotting layers\n')
-
-  # plot-related vars: TODO: move me to a separate file!
-  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
-  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
-
   source('./plotLayersForTimestep.r')
 } else {
   cat('processLayers.r: not plotting layers\n')
@@ -181,6 +179,7 @@ for (i.timestep in 1:datavar.timesteps.n) {
       n.layers=datavar.layers.n,
       attrs.list=attrs.list,
       q.vec=probabilities.vec,
+      l2d.fp=l2d.fp,
       colors=colors,
       map=map)
   }

@@ -30,8 +30,11 @@ datavar.name <- "DN2"
 layers.n.good <- c(0)
 input.fp <- sprintf('./5yravg.%svars_fixed.nc', datavar.name)
 output.fp <- sprintf('./5yravg.%sdemonotonicized.nc', datavar.name)
-# plot-related vars
+# plot-related vars. TODO: move me to a separate file!
 plot.layers <- FALSE
+image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+l2d.fp <- "./layer2description.rds"    # env mapping layer#s to crop descriptions
 # package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
@@ -62,11 +65,6 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('demonotonicizeVar.r: plotting layers\n')
-
-  # plot-related vars: TODO: move me to a separate file!
-  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
-  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
-
   source('./plotLayersForTimestep.r')
 } else {
   cat('demonotonicizeVar.r: not plotting layers\n')
@@ -176,6 +174,7 @@ for (i.timestep in 1:datavar.timesteps.n) {
       n.layers=datavar.layers.n,
       attrs.list=attrs.list,
       q.vec=probabilities.vec,
+      l2d.fp=l2d.fp,
       colors=colors,
       map=map)
   }

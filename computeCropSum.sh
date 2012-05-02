@@ -2,66 +2,8 @@
 
 # description---------------------------------------------------------
 
-# Takes as input a *5yravg*.nc (or similar) from EPIC
-# (possibly as modified by modifyDN2.r) containing one layer per crop, 
-# and a single data variable (description).
-
-# Outputs a new 5yravg.*.nc containing
-# * only the desired datavar ...
-# * ... with an additional layer showing where there's BELD data ...
-# * ... and an additional layer containing the sum of the other layers.
-
-# Requires
-# 1 up-to-date R, with added (non-base) packages
-
-# * 'ncdf4'
-
-# http://cran.r-project.org/web/packages/ncdf4/
-# http://cirrus.ucsd.edu/~pierce/ncdf/
-
-# * 'M3'
-
-# http://cran.r-project.org/web/packages/M3/
-
-# * 'fields' (for plotting)
-
-# http://www.image.ucar.edu/Software/Fields/
-
-# 2 up-to-date NCO
-
-# http://nco.sourceforge.net/
-
-#   to do some file modification that's tedious to do with R
-#   (but could almost certainly be done R-alone).
-
-# 3 m3tools/m3wndw from
-
-# http://www.baronams.com/products/ioapi/M3WNDW.html
-
-#   to do the file windowing.
-
-# 4 helper scripts
-
-### TODO: FINISH ME###
-
-# (It also uses
-
-# * a PDF viewer to display produced plots:
-#   edit the script to use your local tool of choice.
-
-# * m3tools/m3stat from
-
-# http://www.baronams.com/products/ioapi/M3STAT.html
-
-#   for "IOAPI verification," though it's more slack than VERDI.
-
-# These can be commented out if desired.)
-
-# Overview:
-# 1 (NCO) remove all datavars != DN2
-# 2 (NCO) create new layers: extend datavar == DN2 along dim==LAY
-# 3 (writeBELDlayer.r) mark each gridcell in BELD layer for which we have BELD data
-# 4 (computeCropSum.r) in sum layer, compute sum of products of EPIC and BELD
+# Top-level driver for github project=ioapi-hack-R. See ./README
+# https://github.com/TomRoche/ioapi-hack-R/blob/master/README
 
 # code----------------------------------------------------------------
 
@@ -135,6 +77,14 @@ let NORTH_LAT=45
 # input file for driving m3wndw 
 M3WNDW_INPUT_FP="$(mktemp)"
 
+# Plotting:
+# plot to this
+PDF_FN="compare.DN2.layers.pdf"
+PDF_FP="${EPIC_DIR}/${PDF_FN}"
+# use this to map from layer#s to crop descriptions
+L2D_FN="layer2description.rds"
+L2D_FP="${EPIC_DIR}/${L2D_FN}"
+
 # this fixes removed vars, and dims and global attributes that must reflect them
 FIX_VARS_SCRIPT="${EPIC_DIR}/processVars.r"
 # This script, which "demonotonocizes" a datavar, should become unnecessary with future EPIC data.
@@ -149,8 +99,6 @@ SUM_SCRIPT="${EPIC_DIR}/computeCropSum.r"
 WINDOW_SCRIPT="${EPIC_DIR}/windowEmissions.r"
 # this plots layers for timestep(s)
 PLOT_SCRIPT="${EPIC_DIR}/justPlots.r"
-# plot to this
-PDF_FP="${EPIC_DIR}/compare.DN2.layers.pdf"
 
 # functions-----------------------------------------------------------
 
@@ -341,6 +289,7 @@ attr.val=${VAR_MISSING_VALUE_VAL} \
 attr.prec=\"${VAR_MISSING_VALUE_PREC}\" \
 plot.layers=TRUE \
 image.fp=\"${PDF_FP}\" \
+l2d.fp=\"${L2D_FP}\" \
 ' \
 ${WINDOW_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \

@@ -4,6 +4,14 @@
 
 library(fields)
 
+# double-sprintf-ing to set precision by constant: cool or brittle?
+stats.precision <- 3 # sigdigs to use for min, median, max of obs
+stat.str <- sprintf('%%.%ig', stats.precision)
+# use these in function=subtitle.stats as sprintf inputs
+max.str <- sprintf('max=%s', stat.str)
+med.str <- sprintf('med=%s', stat.str)
+min.str <- sprintf('min=%s', stat.str)
+
 plot.layers.for.timestep <- function(
   datavar,          # data variable
   datavar.name,     # string naming the datavar # TODO: get from datavar
@@ -11,7 +19,9 @@ plot.layers.for.timestep <- function(
   i.timestep=1,     # index of timestep to plot
   n.layers=0,       # max number of layers (in timestep) to plot
   attrs.list,       # list of global attributes
-  q.vec=NULL,       # for quantiles # TODO: handle when null!
+                    # TODO: handle when null!
+  q.vec=NULL,       # quantile bounds
+  l2d.fp=NULL,      # maps layer# to crop description
   colors,
   map
 ) {
@@ -20,30 +30,37 @@ plot.layers.for.timestep <- function(
 # i.layer <- 1
 
     # get title string:
-    # first, minimally:
+    # minimally:
     title <- sprintf('%s: layer#=%2i', datavar.name, i.layer)
-#    title <- sprintf('%s: layer#=%2i (%s) # when we have the crop name
+    if (!is.null(l2d.fp)) {      # TODO: test file readability
+      l2d.env <- readRDS(l2d.fp) # TODO: test me!
+      title <- sprintf('%s (%s)',
+        title, l2d.env[[as.character(i.layer)]])
+    } else {
+      cat(sprintf(
+        'ERROR: plot.layers.for.timestep: no file mapping layer#s to descriptions\n'))
+    }
     attr.list <-
       ncatt_get(datavar.parent, varid=datavar.name, attname="units")
     if (attr.list$hasatt) {
       title <- sprintf('%s, units=%s', title, attr.list$value)
     } else {
       cat(sprintf(
-        'plot.layers.for.timestep: ERROR: no units for var=%s\n',
+        'ERROR: plot.layers.for.timestep: no units for var=%s\n',
         datavar.name))
     }
 
-#    data <- datavar[,,i.layer,i.timestep]
     data <- datavar[,,i.layer]
 # start debugging for Doug Nychka Mon, 13 Feb 2012 21:33:36 -0700
 #    print(paste('class(data)==', class(data), sep=""))
 #   end debugging for Doug Nychka Mon, 13 Feb 2012 21:33:36 -0700
 
     # get stats for subtitle
+    # to put under title, just create second line (thanks, Doug Nychka)
+    title <- sprintf('%s\n%s', title, subtitle.stats(data))
+
     plot.layer(data,
     title=title,
-#    sub="subtitle",
-    sub=subtitle.stats(data),
     attrs.list=attrs.list,
     q.vec=q.vec,
     colors=colors,
@@ -57,17 +74,18 @@ subtitle.stats <- function(vec) {
   if (is.numeric(vec) && sum(!is.na(vec))) {
 #    unsparse.vec <- subset(vec, !is.na(vec)) # fail: intended for interactive use
 #    unsparse.vec <- na.omit(vec) # fail: omits all *rows* containing an NA!
+    grids <- length(vec)
+    grids.str <- sprintf('(of cells=%i)', grids)
     unsparse.vec <- vec[!is.na(vec)]
-    len <- length(unsparse.vec)
-    len.str <- sprintf('obs=%i', len)
-    min <- min(unsparse.vec)
-    min.str <- sprintf('min=%f', min)
-    med <- median(unsparse.vec)
-    med.str <- sprintf('med=%f', med)
-    max <- max(unsparse.vec)
-    max.str <- sprintf('max=%f', max)
+    obs <- length(unsparse.vec)
+    obs.str <- sprintf('obs=%i', obs)
+    # use constants defined above. TODO: compute these once!
+    max.str <- sprintf(max.str, max(unsparse.vec))
+    med.str <- sprintf(med.str, median(unsparse.vec))
+    min.str <- sprintf(min.str, min(unsparse.vec))
     return.str <-
-      sprintf('%s: %s, %s, %s', len.str, min.str, med.str, max.str)
+      sprintf('%s %s: %s, %s, %s',
+              obs.str, grids.str, min.str, med.str, max.str)
   } else {
     return.str <-"no data"
   }
@@ -157,18 +175,28 @@ plot.layer <- function(
 #      print(paste('Non-null image.plot for source layer==', i.layer, ', quantile bounds=='))
 #      print(quantiles)
 #   end debugging
-    image.plot(plot.list, xlab="", ylab="", axes=F, col=colors(100),
-      axis.args=list(at=quantiles, labels=quantiles.formatted),
-#      main=title)
-      main=title, sub=subtitle)
+    if (is.null(subtitle)) {
+      image.plot(plot.list, xlab="", ylab="", axes=F, col=colors(100),
+        axis.args=list(at=quantiles, labels=quantiles.formatted),
+        main=title)
+    } else {
+      image.plot(plot.list, xlab="", ylab="", axes=F, col=colors(100),
+        axis.args=list(at=quantiles, labels=quantiles.formatted),
+        main=title, sub=subtitle)
+    }
     lines(map)
   } else {
 # debugging
 #      print(paste('Null image.plot for source layer=', i.layer))
-    plot(0, type="n", axes=F, xlab="", ylab="",
-      xlim=range(x.centers), ylim=range(y.centers),
-#      main=title)
-      main=title, sub=subtitle)
+    if (is.null(subtitle)) {
+      plot(0, type="n", axes=F, xlab="", ylab="",
+        xlim=range(x.centers), ylim=range(y.centers),
+        main=title)
+    } else {
+      plot(0, type="n", axes=F, xlab="", ylab="",
+        xlim=range(x.centers), ylim=range(y.centers),
+        main=title, sub=subtitle)
+    }
     lines(map)
   } # end testing data
 } # end function plot.layer

@@ -42,9 +42,11 @@ epic.input.fp <- sprintf('./5yravg.%sunsummed.nc', datavar.name)
 epic.output.fp <- sprintf('./5yravg.%sbelded.nc', datavar.name)
 # path to serialized BELD array, as produced by beldToRDS
 beld.fp <- "./BELD4crops_12km_6_13_11_LimeiRan.rds"
-
-# plot-related vars
+# plot-related vars. TODO: move me to a separate file!
 plot.layers <- FALSE
+image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
+map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
+l2d.fp <- "./layer2description.rds"    # env mapping layer#s to crop descriptions
 # package=grDevices
 palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
 colors <- colorRampPalette(palette.vec)
@@ -100,11 +102,6 @@ if (length(args)==0) {
 
 if (plot.layers) {
   cat('writeBELDlayer.r: plotting layers\n')
-
-  # plot-related vars: TODO: move me to a separate file!
-  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
-  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
-
   source('./plotLayersForTimestep.r')
 } else {
   cat('writeBELDlayer.r: not plotting layers\n')
@@ -213,7 +210,7 @@ for (i.timestep in 1:datavar.timesteps.n) {
 
   if (plot.layers) {
 # debugging
-    cat(sprintf('processLayers.r: plot.layers.for.timestep==%i, n.layers==%i\n',
+    cat(sprintf('writeBELDlayer.r: plot.layers.for.timestep==%i, n.layers==%i\n',
       i.timestep, datavar.layers.n))
     epic.output.datavar <- ncvar_get(epic.output.file, varid=datavar.name)
     plot.layers.for.timestep(
@@ -224,6 +221,7 @@ for (i.timestep in 1:datavar.timesteps.n) {
       n.layers=datavar.layers.n,
       attrs.list=attrs.list,
       q.vec=probabilities.vec,
+      l2d.fp=l2d.fp,
       colors=colors,
       map=map)
   }
