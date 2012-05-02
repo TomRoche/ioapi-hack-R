@@ -1,12 +1,19 @@
 *~
+.RData
+.Rhistory
 
-# don't backup data files
+# don't backup data files (upload them to github)
 *.csv
 *.csv.*
+*.dat
+*.dat.*
 *.nc
 *.nc.*
 *.rds
 *.rds.*
+
+# don't backup visualizations (upload them to github)
+*.pdf
 
 # pre-SCM backups
 *.r.*
