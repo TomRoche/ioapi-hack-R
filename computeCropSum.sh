@@ -70,6 +70,11 @@ WINDOWING_FN="windowingConstants.sh"
 WINDOWING_FP="${EPIC_DIR}/${WINDOWING_FN}"
 source "${WINDOWING_FP}"
 
+# bash utilities
+BASH_UTILS_FN="bashUtilities.sh"
+BASH_UTILS_FP="${EPIC_DIR}/${BASH_UTILS_FN}"
+source "${BASH_UTILS_FP}"
+
 # Plotting:
 # plot to this
 PDF_FN="compare.DN2.layers.pdf"
@@ -94,24 +99,6 @@ WINDOW_SCRIPT="${EPIC_DIR}/windowEmissions.r"
 PLOT_SCRIPT="${EPIC_DIR}/justPlots.r"
 
 # functions-----------------------------------------------------------
-
-# If your computing platform uses Environment Modules (
-# http://modules.sourceforge.net/
-# ), load modules for current NCO and IOAPI, noting
-# how this syntax differs from the commandline.
-# (Thanks, Barron Henderson for noting this.)
-# TODO: test for non/existence of paths above!
-function setup {
-  # for CMD in \
-  #   "modulecmd bash add nco ioapi-3.1" \
-  # ; do
-  #   echo -e "$ ${CMD}"
-  #   eval "${CMD}"
-  # done
-  TEMPFILE="$(mktemp)"
-  modulecmd bash add nco ioapi-3.1 > ${TEMPFILE}
-  source ${TEMPFILE}
-}
 
 # for IOAPI, gotta keep var=TFLAG as well,
 # *AND* gotta fix
@@ -293,33 +280,6 @@ ${WINDOW_SCRIPT} ${TEMPFILE}" \
   export M3STAT_FILE="${EPIC_WINDOWED_FP}"
 }
 
-# Used to search for where we're losing var attr=missing_value
-# Don't use return value, rely on side effect on stdout
-function findAttributeInFile {
-  ATTR_NAME="$1" # mandatory argument=attribute name
-  NC_FP="$2"     # mandatory argument=path to a netCDF file
-  if [[ -z "${ATTR_NAME}" ]] ; then
-    echo "ERROR: findAttribute: blank or missing attribute name"
-    return 1
-  fi
-  if [[ -z "${NC_FP}" ]] ; then
-    echo "ERROR: findAttribute: blank or missing path to netCDF file"
-    return 2
-  fi
-  if [[ ! -r "${NC_FP}" ]] ; then
-    echo "ERROR: findAttribute: cannot read netCDF file='${NC_FP}'"
-    return 3
-  fi
-
-  # TODO: test these are in path
-  for CMD in \
-    "ncdump -h ${NC_FP} | fgrep -e '${ATTR_NAME}'" \
-  ; do
-    echo -e "$ ${CMD}"
-    eval "${CMD}"
-  done
-}
-
 function teardown {
   TERRAE_PDF_VIEW_CMD="xpdf ${PDF_FP}"
   # Now loading module=ioapi-3.1 (for `m3stat`) in `setup`
@@ -375,7 +335,7 @@ for CMD in \
   eval "${CMD}"
   # start debugging
 #  # show
-#  # * newest netCDF file
+#  # * newest netCDF file: to enable, must delete previous run!
 #  # * whether it contains the desired attribute
 #  NEWEST_NC_FP="$(ls -1t ${EPIC_DIR}/*.nc | head -n 1)"
 #  ATTR_NAME='missing_value'
