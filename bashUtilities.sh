@@ -6,7 +6,59 @@
 
 # constants-----------------------------------------------------------
 
+# TODO: read from CCTM Makefile
+IOAPI_VERSION="3.1" # desired
+NCO_VERSION="4.0.5" # desired
+HPCC_IOAPI_PATH="/project/air5/roche/CMAQ-5-eval/lib/ioapi_${IOAPI_VERSION}"
+HPCC_NCO_PATH="/share/linux86_64/nco/nco-${NCO_VERSION}/bin"
+TERRAE_IOAPI_MODULE="ioapi-${IOAPI_VERSION}"
+TERRAE_NCO_MODULE="nco-${NCO_VERSION}" # in `module avail` as of May 2012
+
 # functions-----------------------------------------------------------
+
+# ensure IOAPI is on path
+# TODO: ensure your hostname matches here!
+function setup {
+  H="$(hostname)"
+  case "${H}" in
+    terra*)
+#      echo -e "${H} is on terrae"
+      setupModules
+      ;;
+    amad*)
+#      echo -e "${H} is on hpcc"
+      addPath "${HPCC_IOAPI_PATH}"
+      addPath "${HPCC_NCO_PATH}"
+      ;;
+    imaster*)
+#      echo -e "${H} is on hpcc"
+      addPath "${HPCC_IOAPI_PATH}"
+      addPath "${HPCC_NCO_PATH}"
+      ;;
+    *)
+      echo -e "unknown ${H}"
+#      exit
+      ;;
+  esac
+}
+
+# add $1 to PATH if not already there
+function addPath {
+    DIR="$1"
+    if [[ -n "${DIR}" ]] ; then
+      if [ -d "${DIR}" ] ; then
+        if [[ ":$PATH:" != *":$1:"* ]] ; then
+          PATH="${DIR}:${PATH}"
+        else
+          echo -e "PATH contains '${DIR}'"
+        fi
+      else
+        echo -e "ERROR: addPath: '${DIR}' is not a directory"
+      fi
+    else
+      echo -e 'ERROR: addPath: DIR not defined'
+    fi
+}
 
 # If your computing platform uses Environment Modules (
 # http://modules.sourceforge.net/
@@ -14,15 +66,15 @@
 # how this syntax differs from the commandline.
 # (Thanks, Barron Henderson for noting this.)
 # TODO: test for non/existence of paths above!
-function setup {
+function setupModules {
   # for CMD in \
-  #   "modulecmd bash add nco ioapi-3.1" \
+  #   "modulecmd bash add ${TERRAE_NCO_MODULE} ${TERRAE_IOAPI_MODULE}" \
   # ; do
   #   echo -e "$ ${CMD}"
   #   eval "${CMD}"
   # done
   TEMPFILE="$(mktemp)"
-  modulecmd bash add nco ioapi-3.1 > ${TEMPFILE}
+  modulecmd bash add ${TERRAE_NCO_MODULE} ${TERRAE_IOAPI_MODULE} > ${TEMPFILE}
   source ${TEMPFILE}
 }
 
