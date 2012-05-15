@@ -17,5 +17,5 @@
 
 # pre-SCM backups
 *.r.*
-# pre-SCM backups
+*.pdf.*
 *.sh.*

@@ -1,4 +1,36 @@
-This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files. The top-level driver is a bash script (computeCropSum.sh), which mostly drives two sets of netCDF-aware tools:
+This project is intended to illustrate the hacking of "I/O API metadata" (aka IOAPI metadata) in netCDF files. (For more info on those standards, see
+
+http://www.baronams.com/products/ioapi/
+http://www.unidata.ucar.edu/software/netcdf/
+
+) The top-level drivers are two bash scripts:
+
+1 computeCropSum.sh: this takes an input of valid IOAPI (but which is semantically crippled), and
+
+* removes all but the data variable of interest
+* fixes the problem with its data
+* assimilates some BELD data to a separate layer
+* integrates the data over each gridcell
+* "windows" the data to a subdomain
+* plots the data, for each layer, recording metadata
+
+2 mergeWithCmaqEmissions.sh: this takes as input
+
+* the output of computeCropSum.sh (aka "EPIC emissions")
+* emissions files from specified CMAQ-5 evaluation dates (aka "eval emissions")
+
+  and
+
+* windows each of the eval emissions to match the EPIC emissions' domain
+* adds to each eval emissions file a specie=N2O for to contain the integration of the EPIC emissions
+* converts the EPIC emissions' units to match those of the eval emissions
+
+while ensuring IOAPI-validity is conserved (e.g., the output can be
+
+* loaded by VERDI, which is notoriously "hard to please"
+* consumed by CCTM (aka CMAQ)
+
+). The top-level drivers mostly drive two sets of netCDF-aware tools:
 
 1 NCO
 

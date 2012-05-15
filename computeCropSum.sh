@@ -2,7 +2,7 @@
 
 # description---------------------------------------------------------
 
-# Top-level driver for github project=ioapi-hack-R. See ./README
+# A top-level driver for github project=ioapi-hack-R. See ./README
 # https://github.com/TomRoche/ioapi-hack-R/blob/master/README
 
 # code----------------------------------------------------------------
@@ -40,7 +40,6 @@ EPIC_DIR="${THIS_DIR}"
 # EPIC_ORIGINAL has
 # + all the original fields
 # - the monotonicization problem
-# TODO: add demonotonicization to this script!
 EPIC_ORIGINAL_FN="5yravg.test.nc"
 EPIC_ORIGINAL_FP="${EPIC_DIR}/${EPIC_ORIGINAL_FN}"
 EPIC_INPUT_FN="5yravg.fixed${VAR_NAME}.nc"
@@ -66,16 +65,10 @@ EPIC_SUMMED_FP="${EPIC_DIR}/${EPIC_SUMMED_FN}"
 EPIC_WINDOWED_FN="5yravg.${VAR_NAME}windowed.nc"
 EPIC_WINDOWED_FP="${EPIC_DIR}/${EPIC_WINDOWED_FN}"
 
-# Windowing:
-# bounds:
-# * order follows m3wndw input convention
-# * all values signed decimal (i.e., S,W are negative)
-let WEST_LON=-96
-let EAST_LON=-90
-let SOUTH_LAT=39
-let NORTH_LAT=45
-# input file for driving m3wndw 
-M3WNDW_INPUT_FP="$(mktemp)"
+# Windowing bounds:
+WINDOWING_FN="windowingConstants.sh"
+WINDOWING_FP="${EPIC_DIR}/${WINDOWING_FN}"
+source "${WINDOWING_FP}"
 
 # Plotting:
 # plot to this
@@ -103,7 +96,7 @@ PLOT_SCRIPT="${EPIC_DIR}/justPlots.r"
 # functions-----------------------------------------------------------
 
 # If your computing platform uses Environment Modules (
-
+# http://modules.sourceforge.net/
 # ), load modules for current NCO and IOAPI, noting
 # how this syntax differs from the commandline.
 # (Thanks, Barron Henderson for noting this.)
