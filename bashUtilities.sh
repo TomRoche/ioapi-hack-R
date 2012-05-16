@@ -9,7 +9,8 @@
 # TODO: read from CCTM Makefile
 IOAPI_VERSION="3.1" # desired
 NCO_VERSION="4.0.5" # desired
-HPCC_IOAPI_PATH="/project/air5/roche/CMAQ-5-eval/lib/ioapi_${IOAPI_VERSION}"
+HPCC_IOAPI_BIN_PATH="/home/roche/bin/ioapi-3.1" # but it has libs for the bins :-(
+HPCC_IOAPI_LIB_PATH="/project/air5/roche/CMAQ-5-eval/lib/ioapi_${IOAPI_VERSION}"
 HPCC_NCO_PATH="/share/linux86_64/nco/nco-${NCO_VERSION}/bin"
 TERRAE_IOAPI_MODULE="ioapi-${IOAPI_VERSION}"
 TERRAE_NCO_MODULE="nco-${NCO_VERSION}" # in `module avail` as of May 2012
@@ -27,13 +28,15 @@ function setup {
       ;;
     amad*)
 #      echo -e "${H} is on hpcc"
-      addPath "${HPCC_IOAPI_PATH}"
+      addPath "${HPCC_IOAPI_LIB_PATH}"
       addPath "${HPCC_NCO_PATH}"
+      addLdLibraryPath "${HPCC_IOAPI_BIN_PATH}"
       ;;
     imaster*)
 #      echo -e "${H} is on hpcc"
-      addPath "${HPCC_IOAPI_PATH}"
+      addPath "${HPCC_IOAPI_LIB_PATH}"
       addPath "${HPCC_NCO_PATH}"
+      addLdLibraryPath "${HPCC_IOAPI_BIN_PATH}"
       ;;
     *)
       echo -e "unknown ${H}"
@@ -47,7 +50,7 @@ function addPath {
     DIR="$1"
     if [[ -n "${DIR}" ]] ; then
       if [ -d "${DIR}" ] ; then
-        if [[ ":$PATH:" != *":$1:"* ]] ; then
+        if [[ ":${PATH}:" != *":${DIR}:"* ]] ; then
           PATH="${DIR}:${PATH}"
         else
           echo -e "PATH contains '${DIR}'"
@@ -57,6 +60,24 @@ function addPath {
       fi
     else
       echo -e 'ERROR: addPath: DIR not defined'
+    fi
+}
+
+# add $1 to LD_LIBRARY_PATH if not already there
+function addLdLibraryPath {
+    DIR="$1"
+    if [[ -n "${DIR}" ]] ; then
+      if [ -d "${DIR}" ] ; then
+        if [[ ":${LD_LIBRARY_PATH}:" != *":${DIR}:"* ]] ; then
+          LD_LIBRARY_PATH="${DIR}:${LD_LIBRARY_PATH}"
+        else
+          echo -e "LD_LIBRARY_PATH contains '${DIR}'"
+        fi
+      else
+        echo -e "ERROR: addLdLibraryPath: '${DIR}' is not a directory"
+      fi
+    else
+      echo -e 'ERROR: addLdLibraryPath: DIR not defined'
     fi
 }
 
@@ -84,15 +105,15 @@ function findAttributeInFile {
   ATTR_NAME="$1" # mandatory argument=attribute name
   NC_FP="$2"     # mandatory argument=path to a netCDF file
   if [[ -z "${ATTR_NAME}" ]] ; then
-    echo "ERROR: findAttribute: blank or missing attribute name"
+    echo -e 'ERROR: findAttribute: blank or missing attribute name'
     return 1
   fi
   if [[ -z "${NC_FP}" ]] ; then
-    echo "ERROR: findAttribute: blank or missing path to netCDF file"
+    echo -e 'ERROR: findAttribute: blank or missing path to netCDF file'
     return 2
   fi
   if [[ ! -r "${NC_FP}" ]] ; then
-    echo "ERROR: findAttribute: cannot read netCDF file='${NC_FP}'"
+    echo -e "ERROR: findAttribute: cannot read netCDF file='${NC_FP}'"
     return 3
   fi
 
