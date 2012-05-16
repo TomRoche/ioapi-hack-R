@@ -9,8 +9,8 @@
 # TODO: read from CCTM Makefile
 IOAPI_VERSION="3.1" # desired
 NCO_VERSION="4.0.5" # desired
-HPCC_IOAPI_BIN_PATH="/home/roche/bin/ioapi-3.1" # but it has libs for the bins :-(
 HPCC_IOAPI_LIB_PATH="/project/air5/roche/CMAQ-5-eval/lib/ioapi_${IOAPI_VERSION}"
+HPCC_IOAPI_BIN_PATH="${HPCC_IOAPI_LIB_PATH}"
 HPCC_NCO_PATH="/share/linux86_64/nco/nco-${NCO_VERSION}/bin"
 TERRAE_IOAPI_MODULE="ioapi-${IOAPI_VERSION}"
 TERRAE_NCO_MODULE="nco-${NCO_VERSION}" # in `module avail` as of May 2012
@@ -28,15 +28,15 @@ function setup {
       ;;
     amad*)
 #      echo -e "${H} is on hpcc"
-      addPath "${HPCC_IOAPI_LIB_PATH}"
+      addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_NCO_PATH}"
-      addLdLibraryPath "${HPCC_IOAPI_BIN_PATH}"
+      addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
       ;;
     imaster*)
 #      echo -e "${H} is on hpcc"
-      addPath "${HPCC_IOAPI_LIB_PATH}"
+      addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_NCO_PATH}"
-      addLdLibraryPath "${HPCC_IOAPI_BIN_PATH}"
+      addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
       ;;
     *)
       echo -e "unknown ${H}"
