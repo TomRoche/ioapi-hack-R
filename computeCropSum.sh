@@ -100,6 +100,11 @@ PLOT_SCRIPT="${EPIC_DIR}/justPlots.r"
 
 # functions-----------------------------------------------------------
 
+# TODO: test for resources, reuse if available
+function setup {
+  setupPaths
+} # end function setup
+
 # for IOAPI, gotta keep var=TFLAG as well,
 # *AND* gotta fix
 # * coordinate var=VAR

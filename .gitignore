@@ -9,6 +9,8 @@
 *.dat.*
 *.nc
 *.nc.*
+*.ncf
+*.ncf.*
 *.rds
 *.rds.*
 

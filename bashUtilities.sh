@@ -9,6 +9,8 @@
 # TODO: read from CCTM Makefile
 IOAPI_VERSION="3.1" # desired
 NCO_VERSION="4.0.5" # desired
+HPCC_R_PATH="/share/linux86_64/bin"
+HPCC_NCDUMP_PATH="/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin"
 HPCC_IOAPI_LIB_PATH="/project/air5/roche/CMAQ-5-eval/lib/ioapi_${IOAPI_VERSION}"
 HPCC_IOAPI_BIN_PATH="${HPCC_IOAPI_LIB_PATH}"
 HPCC_NCO_PATH="/share/linux86_64/nco/nco-${NCO_VERSION}/bin"
@@ -19,7 +21,8 @@ TERRAE_NCO_MODULE="nco-${NCO_VERSION}" # in `module avail` as of May 2012
 
 # ensure IOAPI is on path
 # TODO: ensure your hostname matches here!
-function setup {
+# TODO: setup packages={ncdf4} on infinity, not just amad
+function setupPaths {
   H="$(hostname)"
   case "${H}" in
     terra*)
@@ -27,15 +30,25 @@ function setup {
       setupModules
       ;;
     amad*)
+
+ERROR: addPath: '/share/linux86_64/nco/nco-4.0.5/bin' is not a directory
+ERROR: addPath: '/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin' is not a directory
+
+
 #      echo -e "${H} is on hpcc"
       addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_NCO_PATH}"
+      addPath "${HPCC_NCDUMP_PATH}"
+      addPath "${HPCC_R_PATH}"
       addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
       ;;
     imaster*)
 #      echo -e "${H} is on hpcc"
+      echo -e "For R packages such as ncdf4, must run on amad"
       addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_NCO_PATH}"
+      addPath "${HPCC_NCDUMP_PATH}"
+      addPath "${HPCC_R_PATH}"
       addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
       ;;
     *)
@@ -43,7 +56,7 @@ function setup {
 #      exit
       ;;
   esac
-}
+} # end function setupPaths
 
 # add $1 to PATH if not already there
 function addPath {
