@@ -44,8 +44,6 @@ EPIC_ORIGINAL_FN="5yravg.test.nc"
 EPIC_ORIGINAL_FP="${EPIC_DIR}/${EPIC_ORIGINAL_FN}"
 EPIC_INPUT_FN="5yravg.fixed${VAR_NAME}.nc"
 EPIC_INPUT_FP="${EPIC_DIR}/${EPIC_INPUT_FN}"
-EPIC_STRIPPED_FN="5yravg.${VAR_NAME}stripped.nc"
-EPIC_STRIPPED_FP="${EPIC_DIR}/${EPIC_STRIPPED_FN}"
 EPIC_VARS_FIXED_FN="5yravg.${VAR_NAME}vars_fixed.nc"
 EPIC_VARS_FIXED_FP="${EPIC_DIR}/${EPIC_VARS_FIXED_FN}"
 EPIC_DEMONOTONICIZED_FN="5yravg.${VAR_NAME}demonotonicized.nc"
@@ -104,37 +102,6 @@ PLOT_SCRIPT="${EPIC_DIR}/justPlots.r"
 function setup {
   setupPaths
 } # end function setup
-
-# for IOAPI, gotta keep var=TFLAG as well,
-# *AND* gotta fix
-# * coordinate var=VAR
-# * global attr=VAR-LIST
-#    "ncatted -O -a _FillValue,${VAR_NAME},o,f,${VAR_MISSING_VALUE_VAL} ${EPIC_STRIPPED_FP}" \
-# Note I copy files to output, *then* work on them, because that's what
-# R package=ncdf4 seems to want.
-function stripOtherDatavars {
-  TEMPFILE="$(mktemp)" # for R output
-  # gotta quote the double quotes :-(
-  # need EPIC_ORIGINAL_FP to get original TFLAG?
-# epic.input.fp=\"${EPIC_ORIGINAL_FP}\" \
-  for CMD in \
-    "ncks -O -v ${VAR_NAME},TFLAG ${EPIC_ORIGINAL_FP} ${EPIC_STRIPPED_FP}" \
-    "cp ${EPIC_STRIPPED_FP} ${EPIC_VARS_FIXED_FP}" \
-    "R CMD BATCH --vanilla --slave '--args \
-datavar.name=\"${VAR_NAME}\" \
-plot.layers=FALSE \
-epic.input.fp=\"${EPIC_STRIPPED_FP}\" \
-epic.output.fp=\"${EPIC_VARS_FIXED_FP}\" \
-' \
-${FIX_VARS_SCRIPT} ${TEMPFILE}" \
-    "cat ${TEMPFILE}" \
-  ; do
-    echo -e "$ ${CMD}"
-    eval "${CMD}"
-  done
-#  ncdump -v TFLAG ${EPIC_VARS_FIXED_FP}
-  export M3STAT_FILE="${EPIC_VARS_FIXED_FP}"
-}
 
 # This should become unnecessary with future EPIC data.
 # TODO: test arguments
@@ -246,7 +213,9 @@ ${SUM_SCRIPT} ${TEMPFILE}" \
 }
 
 # Window the summed (or other) file prepared above
-# TODO: test for arguments
+# TODO:
+# * test for arguments
+# * separate code for creating m3wndw input file, call separately.
 function windowSummedFile {
   TEMPFILE="$(mktemp)" # for R output
   # These exports are needed by the R script.
@@ -314,7 +283,7 @@ EOF
 # * NCO in path
 
 #   "setup" \
-#   "stripOtherDatavars" \
+#   "stripOtherDatavars ${VAR_NAME} ${EPIC_ORIGINAL_FP} ${EPIC_VARS_FIXED_FP} FALSE" \
 #   "demonotonicizeDatavar" \
 #   "createLayers" \
 #   "processLayers" \
@@ -327,7 +296,7 @@ EOF
 # * end with `teardown` to do output testing (e.g., plot display)
 for CMD in \
   "setup" \
-  "stripOtherDatavars" \
+  "stripOtherDatavars ${VAR_NAME} ${EPIC_ORIGINAL_FP} ${EPIC_VARS_FIXED_FP} FALSE" \
   "demonotonicizeDatavar" \
   "createLayers" \
   "processLayers" \

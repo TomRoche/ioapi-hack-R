@@ -127,6 +127,8 @@ bounds.cols.indices <- findInterval(bounds.y.increasing, cols.left.m)
 #             bounds.cols.indices[1], bounds.cols.indices[length(bounds.cols.indices)]))
 #   end debugging
 
+# TODO: separate code for creating m3wndw input file, call separately.
+
 # create input file for m3wndw
 m3wndw.locol <- bounds.cols.indices[1]
 m3wndw.hicol <- bounds.cols.indices[2]
@@ -181,7 +183,7 @@ if (attr.list$hasatt) {
   if (attr.list$hasatt) {
     cat(sprintf(
       'windowEmissions.r: succeeded in restoring attr=%s on var=%s\n',
-      datavar.name, attr.name))
+      attr.name, datavar.name))
   } else {
     cat(sprintf(
       'windowEmissions.r: ERROR: failed to restore attr=%s on var=%s\n',

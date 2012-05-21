@@ -137,4 +137,78 @@ function findAttributeInFile {
     echo -e "$ ${CMD}"
     eval "${CMD}"
   done
-}
+} # end function findAttributeInFile
+
+# Window a single IOAPI file. Convenience for callers.
+# CONTRACT:
+# * arguments are not checked here, must be checked by callers
+# * m3tools/m3wndw must be in path
+function windowFile {
+  # EMPIRICAL NOTE:
+  # m3wndw (perhaps all of m3tools) truncate envvars @ length=16!
+  # e.g., "M3WNDW_INPUT_FILE" -> "M3WNDW_INPUT_FIL", which fails lookup.
+  # ASSERT: good arguments, must be tested by caller
+  export INFP="$1"
+  export OUFP="$2"
+  M3WNDW_INPUT_FP="$3"
+  # INFP, OUFP are handles for `m3wndw`: don't substitute in shell!
+
+  for CMD in \
+    "ls -alt ${INFP} ${OUFP}" \
+    "m3wndw INFP OUFP < ${M3WNDW_INPUT_FP}" \
+    "ls -alt ${INFP} ${OUFP}" \
+    "ncdump -h ${OUFP} | head -n 20" \
+  ; do
+    echo -e "$ ${CMD}"
+    eval "${CMD}"
+  done
+} # end function windowFile
+
+# Remove all netCDF other than those specified by comma-delimited list VARS_TO_KEEP_CDL.
+# For IOAPI, subsequently gotta fix
+# * global attr=VAR-LIST
+# * coordinate var=VAR
+# * data var=TFLAG
+# Note I copy files to output, *then* work on them, because that's what
+# R package=ncdf4 seems to want.
+# CONTRACT:
+# * arguments are not checked here, must be checked by callers
+# * nco/ncks must be in path
+function stripOtherDatavars {
+  VARS_TO_KEEP_CDL="$1"
+  INPUT_FP="$2"
+  OUTPUT_FP="$3"
+  PLOT_LAYERS_BOOLEAN="$4"
+  TEMPFILE="$(mktemp)" # for R output
+
+  INPUT_FN="$(basename ${INPUT_FP})"
+  INPUT_PREFIX="${INPUT_FN%.*}"
+  INPUT_SUFFIX="${INPUT_FN##*.}"
+  OUTPUT_DIR="$(dirname ${OUTPUT_FP})"
+  RAW_STRIPPED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_stripped.${INPUT_SUFFIX}"
+# start debugging
+#  echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
+#  echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
+#  echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
+#   end debugging
+
+  # gotta quote the double quotes :-(
+  # need INPUT_FP to get original TFLAG?
+  for CMD in \
+    "ncks -O -v ${VARS_TO_KEEP_CDL},TFLAG ${INPUT_FP} ${RAW_STRIPPED_FP}" \
+    "cp ${RAW_STRIPPED_FP} ${OUTPUT_FP}" \
+    "R CMD BATCH --vanilla --slave '--args \
+datavar.name=\"${VARS_TO_KEEP_CDL}\" \
+plot.layers=${PLOT_LAYERS_BOOLEAN} \
+epic.input.fp=\"${RAW_STRIPPED_FP}\" \
+epic.output.fp=\"${OUTPUT_FP}\" \
+' \
+${FIX_VARS_SCRIPT} ${TEMPFILE}" \
+    "cat ${TEMPFILE}" \
+  ; do
+    echo -e "$ ${CMD}"
+   eval "${CMD}"
+  done
+#  ncdump -v TFLAG ${OUTPUT_FP}
+  export M3STAT_FILE="${OUTPUT_FP}"
+} # end function stripOtherDatavars
