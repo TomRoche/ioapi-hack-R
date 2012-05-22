@@ -269,18 +269,16 @@ fix.TFLAG <- function(
   datavar.names <- source.datavar.names
   # ... and from that get the indices of the datavars we want to keep
   source.indices.vec <- numeric(0)
+# start debugging
+#  cat(sprintf('fix.TFLAG:\n'))
+#  cat(sprintf('\tnames.vec=')) ; print(names.vec)
+#  cat(sprintf('\tdatavar.names=')) ; print(datavar.names)
+#   end debugging
   for (name in names.vec) {
     source.indices.vec[length(source.indices.vec) +1] <-
       which(datavar.names == name, arr.ind = TRUE)
   }
   stopifnot(length(names.vec) == length(source.indices.vec)) # ASSERT
-
-# start debugging
-#print('fix.TFLAG: names.vec==')
-#print(names.vec)
-#print('fix.TFLAG: source.indices.vec==')
-#print(source.indices.vec)
-#   end debugging
 
   # Now transfer the TFLAG data for the datavars we want in target.
   datavar.dims.n <- length(dim(source.datavar))

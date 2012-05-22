@@ -6,6 +6,11 @@
 
 # constants-----------------------------------------------------------
 
+# TODO: take switches for help, debugging, no/eval, target drive
+THIS="$0"
+THIS_FN="$(basename $0)"
+THIS_DIR="$(dirname $0)"
+
 # TODO: read from CCTM Makefile
 IOAPI_VERSION="3.1" # desired
 NCO_VERSION="4.0.5" # desired
@@ -16,6 +21,8 @@ HPCC_IOAPI_BIN_PATH="${HPCC_IOAPI_LIB_PATH}"
 HPCC_NCO_PATH="/share/linux86_64/nco/nco-${NCO_VERSION}/bin"
 TERRAE_IOAPI_MODULE="ioapi-${IOAPI_VERSION}"
 TERRAE_NCO_MODULE="nco-${NCO_VERSION}" # in `module avail` as of May 2012
+# this fixes removed vars, and dims and global attributes that must reflect them
+FIX_VARS_SCRIPT="${THIS_DIR}/processVars.r"
 
 # functions-----------------------------------------------------------
 
@@ -30,12 +37,9 @@ function setupPaths {
       setupModules
       ;;
     amad*)
-
-ERROR: addPath: '/share/linux86_64/nco/nco-4.0.5/bin' is not a directory
-ERROR: addPath: '/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin' is not a directory
-
-
 #      echo -e "${H} is on hpcc"
+# ERROR: addPath: '/share/linux86_64/nco/nco-4.0.5/bin' is not a directory
+# ERROR: addPath: '/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin' is not a directory
       addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_NCO_PATH}"
       addPath "${HPCC_NCDUMP_PATH}"
@@ -53,7 +57,7 @@ ERROR: addPath: '/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu
       ;;
     *)
       echo -e "unknown ${H}"
-#      exit
+#      exit 1
       ;;
   esac
 } # end function setupPaths
@@ -143,6 +147,7 @@ function findAttributeInFile {
 # CONTRACT:
 # * arguments are not checked here, must be checked by callers
 # * m3tools/m3wndw must be in path
+# * INFP != OUFP: m3wndw wants separate handles
 function windowFile {
   # EMPIRICAL NOTE:
   # m3wndw (perhaps all of m3tools) truncate envvars @ length=16!
@@ -153,8 +158,12 @@ function windowFile {
   M3WNDW_INPUT_FP="$3"
   # INFP, OUFP are handles for `m3wndw`: don't substitute in shell!
 
+# start debugging
+#  echo -e "windowFile: about to call m3wndw with INFP='${INFP}', OUFP='${OUFP}', M3WNDW_INPUT_FP='${M3WNDW_INPUT_FP}'"
+#   end debugging
+
   for CMD in \
-    "ls -alt ${INFP} ${OUFP}" \
+    "ls -alt ${INFP} ${OUFP} ${M3WNDW_INPUT_FP}" \
     "m3wndw INFP OUFP < ${M3WNDW_INPUT_FP}" \
     "ls -alt ${INFP} ${OUFP}" \
     "ncdump -h ${OUFP} | head -n 20" \
@@ -164,7 +173,7 @@ function windowFile {
   done
 } # end function windowFile
 
-# Remove all netCDF other than those specified by comma-delimited list VARS_TO_KEEP_CDL.
+# Remove all netCDF datavars other than the one named by VAR_NAME.
 # For IOAPI, subsequently gotta fix
 # * global attr=VAR-LIST
 # * coordinate var=VAR
@@ -175,40 +184,43 @@ function windowFile {
 # * arguments are not checked here, must be checked by callers
 # * nco/ncks must be in path
 function stripOtherDatavars {
-  VARS_TO_KEEP_CDL="$1"
+  VAR_NAME="$1"
   INPUT_FP="$2"
   OUTPUT_FP="$3"
-  PLOT_LAYERS_BOOLEAN="$4"
-  TEMPFILE="$(mktemp)" # for R output
+  if [[ -r "${FIX_VARS_SCRIPT}" ]] ; then
 
-  INPUT_FN="$(basename ${INPUT_FP})"
-  INPUT_PREFIX="${INPUT_FN%.*}"
-  INPUT_SUFFIX="${INPUT_FN##*.}"
-  OUTPUT_DIR="$(dirname ${OUTPUT_FP})"
-  RAW_STRIPPED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_stripped.${INPUT_SUFFIX}"
-# start debugging
-#  echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
-#  echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
-#  echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
-#   end debugging
+    TEMPFILE="$(mktemp)" # for R output
+    INPUT_FN="$(basename ${INPUT_FP})"
+    INPUT_PREFIX="${INPUT_FN%.*}"
+    INPUT_SUFFIX="${INPUT_FN##*.}"
+    OUTPUT_DIR="$(dirname ${OUTPUT_FP})"
+    RAW_STRIPPED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_stripped.${INPUT_SUFFIX}"
+  # start debugging
+#    echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
+#    echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
+#    echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
+  #   end debugging
 
-  # gotta quote the double quotes :-(
-  # need INPUT_FP to get original TFLAG?
-  for CMD in \
-    "ncks -O -v ${VARS_TO_KEEP_CDL},TFLAG ${INPUT_FP} ${RAW_STRIPPED_FP}" \
-    "cp ${RAW_STRIPPED_FP} ${OUTPUT_FP}" \
-    "R CMD BATCH --vanilla --slave '--args \
-datavar.name=\"${VARS_TO_KEEP_CDL}\" \
-plot.layers=${PLOT_LAYERS_BOOLEAN} \
-epic.input.fp=\"${RAW_STRIPPED_FP}\" \
-epic.output.fp=\"${OUTPUT_FP}\" \
-' \
-${FIX_VARS_SCRIPT} ${TEMPFILE}" \
-    "cat ${TEMPFILE}" \
-  ; do
-    echo -e "$ ${CMD}"
-   eval "${CMD}"
-  done
-#  ncdump -v TFLAG ${OUTPUT_FP}
-  export M3STAT_FILE="${OUTPUT_FP}"
+    # gotta quote the double quotes :-(
+    # need INPUT_FP to get original TFLAG?
+    for CMD in \
+      "ncks -O -v ${VAR_NAME},TFLAG ${INPUT_FP} ${RAW_STRIPPED_FP}" \
+      "cp ${RAW_STRIPPED_FP} ${OUTPUT_FP}" \
+      "R CMD BATCH --vanilla --slave '--args \
+  datavar.name=\"${VAR_NAME}\" \
+  epic.input.fp=\"${RAW_STRIPPED_FP}\" \
+  epic.output.fp=\"${OUTPUT_FP}\" \
+  ' \
+  ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
+      "cat ${TEMPFILE}" \
+    ; do
+      echo -e "$ ${CMD}"
+      eval "${CMD}"
+    done
+#    ncdump -v TFLAG ${OUTPUT_FP}
+    export M3STAT_FILE="${OUTPUT_FP}"
+  else
+    echo -e "ERROR: stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable"
+    exit 2
+  fi # end testing -x "${FIX_VARS_SCRIPT}"
 } # end function stripOtherDatavars

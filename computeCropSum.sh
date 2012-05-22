@@ -81,8 +81,6 @@ PDF_FP="${EPIC_DIR}/${PDF_FN}"
 L2D_FN="layer2description.rds"
 L2D_FP="${EPIC_DIR}/${L2D_FN}"
 
-# this fixes removed vars, and dims and global attributes that must reflect them
-FIX_VARS_SCRIPT="${EPIC_DIR}/processVars.r"
 # This script, which "demonotonocizes" a datavar, should become unnecessary with future EPIC data.
 DEMONOTONICIZE_SCRIPT="${EPIC_DIR}/demonotonicizeVar.r"
 # this fixes created layers, and global attributes that must reflect them
@@ -283,7 +281,7 @@ EOF
 # * NCO in path
 
 #   "setup" \
-#   "stripOtherDatavars ${VAR_NAME} ${EPIC_ORIGINAL_FP} ${EPIC_VARS_FIXED_FP} FALSE" \
+#   "stripOtherDatavars ${VAR_NAME} ${EPIC_ORIGINAL_FP} ${EPIC_VARS_FIXED_FP}" \
 #   "demonotonicizeDatavar" \
 #   "createLayers" \
 #   "processLayers" \
@@ -296,7 +294,7 @@ EOF
 # * end with `teardown` to do output testing (e.g., plot display)
 for CMD in \
   "setup" \
-  "stripOtherDatavars ${VAR_NAME} ${EPIC_ORIGINAL_FP} ${EPIC_VARS_FIXED_FP} FALSE" \
+  "stripOtherDatavars ${VAR_NAME} ${EPIC_ORIGINAL_FP} ${EPIC_VARS_FIXED_FP}" \
   "demonotonicizeDatavar" \
   "createLayers" \
   "processLayers" \

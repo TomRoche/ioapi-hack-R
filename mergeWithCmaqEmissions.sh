@@ -57,7 +57,7 @@ source "${BASH_UTILS_FP}"
 
 # input raw CMAQ emissions data
 # path setup for infinity, terrae: other users must change!
-CMAQ_EMISSIONS_DIR="${THIS_DIR}/data/emis/raw"
+CMAQ_EMISSIONS_DIR="${THIS_DIR}/data/emis/raw/CMAQ"
 # TODO: get dates from CCTM run script
 CMAQ_EMISSIONS_DATE_START="20060719"
 CMAQ_EMISSIONS_DATE_END="20060731"
@@ -89,6 +89,9 @@ EPIC_TO_CMAQ_SCRIPT_FP="${EPIC_DIR}/${EPIC_TO_CMAQ_SCRIPT_FN}"
 # * container for EPIC hourly emissions
 function setup {
   setupPaths
+  if [[ ! -d "${TEST_EMISSIONS_DIR}" ]] ; then
+    mkdir -p "${TEST_EMISSIONS_DIR}"
+  fi
 } # end function setup
 
 # Window the set of CMAQ-5 emissions files.

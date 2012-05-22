@@ -26,18 +26,9 @@ source('./ioapi.r') # for IOAPI fix functions
 
 # may be overridden by commandline, below
 datavar.name <- "DN2"
-# vector of the names of the datavars we need to keep, for ourselves
-# i.e. (not including TFLAG)
-datavar.names.vec <- c(datavar.name)
 epic.input.fp <- sprintf('./5yravg.%sstripped.nc', datavar.name)
 epic.output.fp <- sprintf('./5yravg.%svars_fixed.nc', datavar.name)
-# plot-related vars
-plot.layers <- FALSE
-# package=grDevices
-palette.vec <- c("grey","purple","deepskyblue2","green","yellow","orange","red","brown")
-colors <- colorRampPalette(palette.vec)
-# used for quantiling legend
-probabilities.vec <- seq(0, 1, 1.0/(length(palette.vec) - 1))
+# plot-related vars? NO: NO PLOTTING HERE!
 
 # main----------------------------------------------------------------
 
@@ -61,57 +52,50 @@ if (length(args)==0) {
   }
 }
 
-if (plot.layers) {
-  cat('processVars.r: plotting layers\n')
-
-  # plot-related vars: TODO: move me to a separate file!
-  image.fp <- "./compare.DN2.layers.pdf" # file to which to plot
-  map.table <- './map.CMAQkm.world.dat'  # map to overlay on plot
-
-  source('./plotLayersForTimestep.r')
-} else {
-  cat('processVars.r: not plotting layers\n')
-}
-
+# vector of the names of the datavars we need to keep, for ourselves
+# i.e. (not including TFLAG)
+# Don't compute this until after caller gets a chance to set!
+datavar.names.vec <- c(datavar.name)
 epic.input.file <- nc_open(epic.input.fp, write=TRUE, readunlim=FALSE)
 epic.input.datavar <- ncvar_get(epic.input.file, varid=datavar.name)
 epic.output.file <- nc_open(epic.output.fp, write=TRUE, readunlim=FALSE)
 epic.output.datavar <- ncvar_get(epic.output.file, varid=datavar.name)
-
-if (plot.layers) {
-  map <- read.table(map.table, sep=",")
-  attrs.list <- get.plot.addrs.from.IOAPI(epic.input.file)
-  # creates PDF, starts graphic device
-  pdf(image.fp, height=3.5, width=5, pointsize=1, onefile=TRUE)
-}
-
 datavar.dims.n <- length(dim(epic.input.datavar))
-datavar.cols.n <- dim(epic.input.datavar)[1]
-datavar.rows.n <- dim(epic.input.datavar)[2]
-datavar.cells.n <- datavar.rows.n * datavar.cols.n
-datavar.layers.n <- dim(epic.input.datavar)[3]
+
+# following is NOT only for plotting: fix.TFLAG needs n.timesteps
+# kludging higher dimensions: do we have (layers > 1) or (timesteps > 1)?
+# note dim=1 often omitted by default :-(
+if ((datavar.dims.n < 2) || (datavar.dims.n > 4)) {
+  # TODO: throw
+  cat(sprintf('ERROR: processVars.r: datavar.dims.n==%i', datavar.dims.n))
+  stopifnot((datavar.dims.n > 1) && (datavar.dims.n < 5)) # ASSERT
+} else {
+  datavar.cols.n <- dim(epic.input.datavar)[1]
+  datavar.rows.n <- dim(epic.input.datavar)[2]
+  datavar.cells.n <- datavar.rows.n * datavar.cols.n
+  if (datavar.dims.n == 2) {
+    datavar.layers.n <- 1
+    dim(epic.input.datavar)[3] <- datavar.layers.n
+    datavar.dims.n <- 3
+  }
+  # Remember timelike dim is always the LAST dimension!
+  if (datavar.dims.n == 3) {
+    datavar.layers.n <- dim(epic.input.datavar)[3]
+    datavar.timesteps.n <- 1
+    dim(epic.input.datavar)[4] <- datavar.timesteps.n
+    datavar.dims.n <- 4
+  }
+  if (datavar.dims.n == 4) {
+    datavar.timesteps.n <- dim(epic.input.datavar)[4]
+  }
+} # end testing datavar.dims.n
+
 # used in reading one timestep at a time
 # (Pierce-style read: see help(ncvar_get)#Examples)
 start <- rep(1,datavar.dims.n) # start=(1,1,1,...)
-# Remember timelike dim is always the LAST dimension!
-# but if val=1, it is omitted from dim(epic.input.datavar), breaking Pierce-style read (below)
-if      (datavar.dims.n < 3) {
-  # TODO: throw
-  print(paste('ERROR: datavar.dims.n==', datavar.dims.n))
-} else if (datavar.dims.n == 3) {
-  datavar.timesteps.n <- 1
-  count <- c(dim(epic.input.datavar), 1)
-  start <- c(start, 1)
-  datavar.dims.max.vec <- count
-  datavar.dims.n <- 4
-} else if (datavar.dims.n == 4) {
-  datavar.timesteps.n <- dim(epic.input.datavar)[datavar.dims.n]
-  count <- dim(epic.input.datavar)
-  datavar.dims.max.vec <- count
-} else {
-  # TODO: throw
-  print(paste('ERROR: datavar.dims.n==', datavar.dims.n))
-}
+count <- dim(epic.input.datavar)
+datavar.dims.max.vec <- count
+
 # start debugging
 # print('initially:')
 # TODO: get output all on one line
@@ -134,44 +118,6 @@ fix.VARdashLIST(epic.input.file, datavar.names.vec, epic.output.file)
 # kludge
 fix.TFLAG(epic.input.file, datavar.names.vec, datavar.timesteps.n, epic.output.file, epic.output.fp)
 
-if (plot.layers) {
-  # for safety (and pedagogy), read in data one timestep at a time, dim-agnostically
-  for (i.timestep in 1:datavar.timesteps.n) {
-  #i.timestep <- 1
-
-    # Initialize start and count to read one timestep of the variable:
-    # start=(1,1,1,i), count=(COL,ROW,LAY,i)
-    start[datavar.dims.n] <- i.timestep
-    count[datavar.dims.n] <- i.timestep
-# start debugging
-#     print(paste('for timestep==', i.timestep, sep=""))
-# TODO: get output all on one line
-#     print('start==') ; print(start)
-#     print('count==') ; print(count)
-#   end debugging
-
-    epic.output.timestep <- ncvar_get(epic.output.file, varid=datavar.name, start=start, count=count)
-# debugging
-    cat(sprintf('processVars.r: plot.layers.for.timestep==%i, n.layers==%i\n',
-      i.timestep, datavar.layers.n))
-    epic.output.datavar <- ncvar_get(epic.output.file, varid=datavar.name)
-    plot.layers.for.timestep(
-      datavar=epic.output.datavar,
-      datavar.name=datavar.name,
-      datavar.parent=epic.output.file,
-      i.timestep=i.timestep,
-      n.layers=datavar.layers.n,
-      attrs.list=attrs.list,
-      q.vec=probabilities.vec,
-      colors=colors,
-      map=map)
-  } # end for timesteps
-} # end if plotting
-
-# Close the connections (ncdf=close.ncdf), ...
-if (plot.layers) {
-  dev.off()
-}
 nc_close(epic.input.file)
 nc_close(epic.output.file)
 # * ... and remove their ADS (not the files!) from the workspace.

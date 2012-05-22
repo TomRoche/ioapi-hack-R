@@ -17,13 +17,14 @@ http://www.unidata.ucar.edu/software/netcdf/
 2 mergeWithCmaqEmissions.sh: this takes as input
 
 * the output of computeCropSum.sh (aka "EPIC emissions")
-* emissions files from specified CMAQ-5 evaluation dates (aka "eval emissions")
+* emissions files from specified CMAQ-5 evaluation dates (aka "CMAQ emissions")
+* MCIP output, containing map scale factors (MSFs), from one of those dates (since the MSFs are presumed time-invariant)
 
   and
 
-* windows each of the eval emissions to match the EPIC emissions' domain
-* adds to each eval emissions file a specie=N2O for to contain the integration of the EPIC emissions
-* converts the EPIC emissions' units to match those of the eval emissions
+* windows each of the CMAQ emissions to match the EPIC emissions' domain
+* adds to each CMAQ emissions file a specie=N2O for contain the integration of the EPIC emissions
+* converts the EPIC emissions' units to match those of the CMAQ emissions
 
 while ensuring IOAPI-validity is conserved (e.g., the output can be
 
