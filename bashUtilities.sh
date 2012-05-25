@@ -7,15 +7,25 @@
 # constants-----------------------------------------------------------
 
 # TODO: take switches for help, debugging, no/eval, target drive
-THIS="$0"
-THIS_FN="$(basename $0)"
-THIS_DIR="$(dirname $0)"
+
+# Following does not work with `source`
+# THIS="$0"
+# THIS_FN="$(basename ${THIS})"
+# THIS_DIR="$(dirname ${THIS})"
+
+THIS="${HOME}/ioapi-hack-R/bashUtilities.sh"
+THIS_FN="$(basename ${THIS})"
+THIS_DIR="$(dirname ${THIS})"
+
+# debugging: get commandline==all positional parameters
+#echo -e "hostname=$(hostname): cmdline='${@}', THIS_DIR='${THIS_DIR}', THIS_FN='${THIS_FN}'"
 
 # TODO: read from CCTM Makefile
 IOAPI_VERSION="3.1" # desired
-NCO_VERSION="4.0.5" # desired
+NCO_VERSION="4.0.5" # version on terrae; infinity has 4.0.8
 HPCC_R_PATH="/share/linux86_64/bin"
-HPCC_NCDUMP_PATH="/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin"
+# `ncdump` now on hpcc in /usr/bin
+#HPCC_NCDUMP_PATH="/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin"
 HPCC_IOAPI_LIB_PATH="/project/air5/roche/CMAQ-5-eval/lib/ioapi_${IOAPI_VERSION}"
 HPCC_IOAPI_BIN_PATH="${HPCC_IOAPI_LIB_PATH}"
 HPCC_NCO_PATH="/share/linux86_64/nco/nco-${NCO_VERSION}/bin"
@@ -38,20 +48,32 @@ function setupPaths {
       ;;
     amad*)
 #      echo -e "${H} is on hpcc"
-# ERROR: addPath: '/share/linux86_64/nco/nco-4.0.5/bin' is not a directory
-# ERROR: addPath: '/share/linux86_64/grads/supplibs-2.2.0/x86_64-unknown-linux-gnu/bin' is not a directory
+# as of 22 May 12, on the hpcc R servers NCO is installed normally, in /usr/bin
+#      addPath "${HPCC_NCO_PATH}"
       addPath "${HPCC_IOAPI_BIN_PATH}"
-      addPath "${HPCC_NCO_PATH}"
-      addPath "${HPCC_NCDUMP_PATH}"
       addPath "${HPCC_R_PATH}"
       addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
       ;;
-    imaster*)
+    global*)
+#      echo -e "${H} is on hpcc"
+#      addPath "${HPCC_NCO_PATH}"
+      addPath "${HPCC_IOAPI_BIN_PATH}"
+      addPath "${HPCC_R_PATH}"
+      addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
+      ;;
+    imaster*) # == infinity
 #      echo -e "${H} is on hpcc"
       echo -e "For R packages such as ncdf4, must run on amad"
-      addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_NCO_PATH}"
-      addPath "${HPCC_NCDUMP_PATH}"
+      addPath "${HPCC_IOAPI_BIN_PATH}"
+      addPath "${HPCC_R_PATH}"
+      addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
+      ;;
+    inode*) # == node39
+#      echo -e "${H} is on hpcc"
+      echo -e "For R packages such as ncdf4, must run on amad"
+      addPath "${HPCC_NCO_PATH}"
+      addPath "${HPCC_IOAPI_BIN_PATH}"
       addPath "${HPCC_R_PATH}"
       addLdLibraryPath "${HPCC_IOAPI_LIB_PATH}"
       ;;
@@ -73,10 +95,10 @@ function addPath {
           echo -e "PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: addPath: '${DIR}' is not a directory"
+        echo -e "ERROR: ${THIS_FN}:addPath: '${DIR}' is not a directory"
       fi
     else
-      echo -e 'ERROR: addPath: DIR not defined'
+      echo -e "ERROR: ${THIS_FN}:addPath: DIR not defined"
     fi
 }
 
@@ -91,10 +113,10 @@ function addLdLibraryPath {
           echo -e "LD_LIBRARY_PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: addLdLibraryPath: '${DIR}' is not a directory"
+        echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: '${DIR}' is not a directory"
       fi
     else
-      echo -e 'ERROR: addLdLibraryPath: DIR not defined'
+      echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: DIR not defined"
     fi
 }
 
@@ -122,15 +144,15 @@ function findAttributeInFile {
   ATTR_NAME="$1" # mandatory argument=attribute name
   NC_FP="$2"     # mandatory argument=path to a netCDF file
   if [[ -z "${ATTR_NAME}" ]] ; then
-    echo -e 'ERROR: findAttribute: blank or missing attribute name'
+    echo -e "ERROR: ${THIS_FN}:findAttribute: blank or missing attribute name"
     return 1
   fi
   if [[ -z "${NC_FP}" ]] ; then
-    echo -e 'ERROR: findAttribute: blank or missing path to netCDF file'
+    echo -e "ERROR: ${THIS_FN}:findAttribute: blank or missing path to netCDF file"
     return 2
   fi
   if [[ ! -r "${NC_FP}" ]] ; then
-    echo -e "ERROR: findAttribute: cannot read netCDF file='${NC_FP}'"
+    echo -e "ERROR: ${THIS_FN}:findAttribute: cannot read netCDF file='${NC_FP}'"
     return 3
   fi
 
@@ -220,7 +242,7 @@ function stripOtherDatavars {
 #    ncdump -v TFLAG ${OUTPUT_FP}
     export M3STAT_FILE="${OUTPUT_FP}"
   else
-    echo -e "ERROR: stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable"
+    echo -e "ERROR: ${THIS_FN}:stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable"
     exit 2
   fi # end testing -x "${FIX_VARS_SCRIPT}"
 } # end function stripOtherDatavars
