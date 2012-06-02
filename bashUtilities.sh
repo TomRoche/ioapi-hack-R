@@ -205,10 +205,19 @@ function windowFile {
 # CONTRACT:
 # * arguments are not checked here, must be checked by callers
 # * nco/ncks must be in path
+# * if output path already exists, it gets overwritten
 function stripOtherDatavars {
   VAR_NAME="$1"
   INPUT_FP="$2"
   OUTPUT_FP="$3"
+  if [[ -r "${OUTPUT_FP}" ]] ; then
+    if [[ -w "${OUTPUT_FP}" ]] ; then
+      DEBUG echo -e "ERROR? ${FUNCNAME[0]}: output file='${OUTPUT_FP}' already exists"
+    else
+      echo -e "ERROR: ${FUNCNAME[0]}: output file='${OUTPUT_FP}' exists but can't be written"
+      exit 1
+    fi
+  fi
   if [[ -r "${FIX_VARS_SCRIPT}" ]] ; then
 
     TEMPFILE="$(mktemp)" # for R output
@@ -246,3 +255,58 @@ function stripOtherDatavars {
     exit 2
   fi # end testing -x "${FIX_VARS_SCRIPT}"
 } # end function stripOtherDatavars
+
+# "Comments" lines from running iff _DEBUG='on' (which can be export'ed by caller),
+# and runs with `set xtrace`
+# For `echo`, use DEBUG()
+function DEBUGx {
+  if [[ "${_DEBUG}" == 'on' ]] ; then
+    set -x
+    "$@" 1>&2
+    set +x
+  fi
+} # end function DEBUG
+
+# "Comments" lines from running iff _DEBUG='on'
+# (which can be export'ed by caller)
+function DEBUG {
+  if [[ "${_DEBUG}" == 'on' ]] ; then
+    "$@" 1>&2
+  fi
+} # end function DEBUG
+
+# Stop if cannot find datavar in file. kludged implementation!
+# CONTRACT: arguments tested by caller
+function exitIfDatavarNotFound {
+  NETCDF_FP="$1"
+  VAR_NAME="$2"
+  VAR_ATTR_NAME="$3"
+  VAR_ATTR_VAL="$4"
+  KEY_NAME="${VAR_NAME}:${VAR_ATTR_NAME}"
+  # add no single quotes to search command!
+  SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
+  if [[ -z "${SEARCH_RESULTS}" ]] ; then
+    echo -e "ERROR: ${THIS_FN}:exitIfDatavarNotFound: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'"
+    exit 1
+  else
+    DEBUG echo -e "${FUNCNAME[0]}: 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}' found ${SEARCH_RESULTS}"
+  fi
+}
+
+# Stop on finding datavar in file. kludged implementation!
+# CONTRACT: arguments tested by caller
+function exitIfDatavarIsFound {
+  NETCDF_FP="$1"
+  VAR_NAME="$2"
+  VAR_ATTR_NAME="$3"
+  VAR_ATTR_VAL="$4"
+  KEY_NAME="${VAR_NAME}:${VAR_ATTR_NAME}"
+  # add no single quotes to search command!
+  SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
+  if [[ -n "${SEARCH_RESULTS}" ]] ; then
+    echo -e "ERROR: ${THIS_FN}:exitIfDatavarIsFound: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'"
+    exit 1
+  else
+    DEBUG echo -e "${FUNCNAME[0]}: nothing found for 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}'"
+  fi
+}

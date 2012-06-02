@@ -37,31 +37,33 @@ BELD_FP="${BELD_DIR}/${BELD_FN}"
 LAYERS_N_GOOD="c(0)"   # demonotonicize all layers
 
 EPIC_DIR="${THIS_DIR}"
+
+EPIC_INPUT_DATA_DIR="${EPIC_DIR}/data/epic/raw"
 # EPIC_ORIGINAL has
 # + all the original fields
 # - the monotonicization problem
 EPIC_ORIGINAL_FN="5yravg.test.nc"
-EPIC_ORIGINAL_FP="${EPIC_DIR}/${EPIC_ORIGINAL_FN}"
-EPIC_INPUT_FN="5yravg.fixed${VAR_NAME}.nc"
-EPIC_INPUT_FP="${EPIC_DIR}/${EPIC_INPUT_FN}"
+EPIC_ORIGINAL_FP="${EPIC_INPUT_DATA_DIR}/${EPIC_ORIGINAL_FN}"
+
+EPIC_OUTPUT_DATA_DIR="${EPIC_DIR}/data/epic/cooked"
 EPIC_VARS_FIXED_FN="5yravg.${VAR_NAME}vars_fixed.nc"
-EPIC_VARS_FIXED_FP="${EPIC_DIR}/${EPIC_VARS_FIXED_FN}"
+EPIC_VARS_FIXED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_VARS_FIXED_FN}"
 EPIC_DEMONOTONICIZED_FN="5yravg.${VAR_NAME}demonotonicized.nc"
-EPIC_DEMONOTONICIZED_FP="${EPIC_DIR}/${EPIC_DEMONOTONICIZED_FN}"
+EPIC_DEMONOTONICIZED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_DEMONOTONICIZED_FN}"
 EPIC_TEMP_FULL_FN="temp.full.nc"
-EPIC_TEMP_FULL_FP="${EPIC_DIR}/${EPIC_TEMP_FULL_FN}"
+EPIC_TEMP_FULL_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_TEMP_FULL_FN}"
 EPIC_TEMP_EXTEND_FN="temp.extend.nc"
-EPIC_TEMP_EXTEND_FP="${EPIC_DIR}/${EPIC_TEMP_EXTEND_FN}"
+EPIC_TEMP_EXTEND_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_TEMP_EXTEND_FN}"
 EPIC_LAYERED_FN="5yravg.${VAR_NAME}layered.nc"
-EPIC_LAYERED_FP="${EPIC_DIR}/${EPIC_LAYERED_FN}"
+EPIC_LAYERED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_LAYERED_FN}"
 EPIC_LAYERS_FIXED_FN="5yravg.${VAR_NAME}layers_fixed.nc"
-EPIC_LAYERS_FIXED_FP="${EPIC_DIR}/${EPIC_LAYERS_FIXED_FN}"
+EPIC_LAYERS_FIXED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_LAYERS_FIXED_FN}"
 EPIC_BELDED_FN="5yravg.${VAR_NAME}belded.nc"
-EPIC_BELDED_FP="${EPIC_DIR}/${EPIC_BELDED_FN}"
+EPIC_BELDED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_BELDED_FN}"
 EPIC_SUMMED_FN="5yravg.${VAR_NAME}summed.nc"
-EPIC_SUMMED_FP="${EPIC_DIR}/${EPIC_SUMMED_FN}"
+EPIC_SUMMED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_SUMMED_FN}"
 EPIC_WINDOWED_FN="5yravg.${VAR_NAME}windowed.nc"
-EPIC_WINDOWED_FP="${EPIC_DIR}/${EPIC_WINDOWED_FN}"
+EPIC_WINDOWED_FP="${EPIC_OUTPUT_DATA_DIR}/${EPIC_WINDOWED_FN}"
 
 # Windowing bounds:
 WINDOWING_FN="windowingConstants.sh"
@@ -112,8 +114,8 @@ function demonotonicizeDatavar {
 datavar.name=\"${VAR_NAME}\" \
 plot.layers=FALSE \
 layers.n.good=${LAYERS_N_GOOD} \
-epic.input.fp=\"${EPIC_VARS_FIXED_FP}\" \
-epic.output.fp=\"${EPIC_DEMONOTONICIZED_FP}\" \
+input.fp=\"${EPIC_VARS_FIXED_FP}\" \
+output.fp=\"${EPIC_DEMONOTONICIZED_FP}\" \
 ' \
 ${DEMONOTONICIZE_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
@@ -153,8 +155,8 @@ function processLayers {
 datavar.name=\"${VAR_NAME}\" \
 plot.layers=FALSE \
 layers.to.fix=${N_LAYERS_TO_CREATE} \
-epic.input.fp=\"${EPIC_LAYERED_FP}\" \
-epic.output.fp=\"${EPIC_LAYERS_FIXED_FP}\" ' \
+input.fp=\"${EPIC_LAYERED_FP}\" \
+output.fp=\"${EPIC_LAYERS_FIXED_FP}\" ' \
 ${FIX_LAYERS_SCRIPT} ${TEMPFILE}" \
     "cat ${TEMPFILE}" \
   ; do
@@ -309,7 +311,7 @@ for CMD in \
 #  # show
 #  # * newest netCDF file: to enable, must delete previous run!
 #  # * whether it contains the desired attribute
-#  NEWEST_NC_FP="$(ls -1t ${EPIC_DIR}/*.nc | head -n 1)"
+#  NEWEST_NC_FP="$(ls -1t ${EPIC_OUTPUT_DATA_DIR}/*.nc | head -n 1)"
 #  ATTR_NAME='missing_value'
 #  for CMD in \
 #    "ls -alh ${NEWEST_NC_FP}" \
