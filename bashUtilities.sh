@@ -95,10 +95,10 @@ function addPath {
           echo -e "PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: ${THIS_FN}:addPath: '${DIR}' is not a directory"
+        echo -e "ERROR: ${THIS_FN}:addPath: '${DIR}' is not a directory" 1>&2
       fi
     else
-      echo -e "ERROR: ${THIS_FN}:addPath: DIR not defined"
+      echo -e "ERROR: ${THIS_FN}:addPath: DIR not defined" 1>&2
     fi
 }
 
@@ -113,10 +113,10 @@ function addLdLibraryPath {
           echo -e "LD_LIBRARY_PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: '${DIR}' is not a directory"
+        echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: '${DIR}' is not a directory" 1>&2
       fi
     else
-      echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: DIR not defined"
+      echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: DIR not defined" 1>&2
     fi
 }
 
@@ -137,33 +137,6 @@ function setupModules {
   modulecmd bash add ${TERRAE_NCO_MODULE} ${TERRAE_IOAPI_MODULE} > ${TEMPFILE}
   source ${TEMPFILE}
 }
-
-# Used to search for where we're losing var attr=missing_value
-# Don't use return value, rely on side effect on stdout
-function findAttributeInFile {
-  ATTR_NAME="$1" # mandatory argument=attribute name
-  NC_FP="$2"     # mandatory argument=path to a netCDF file
-  if [[ -z "${ATTR_NAME}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:findAttribute: blank or missing attribute name"
-    return 1
-  fi
-  if [[ -z "${NC_FP}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:findAttribute: blank or missing path to netCDF file"
-    return 2
-  fi
-  if [[ ! -r "${NC_FP}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:findAttribute: cannot read netCDF file='${NC_FP}'"
-    return 3
-  fi
-
-  # TODO: test these are in path
-  for CMD in \
-    "ncdump -h ${NC_FP} | fgrep -e '${ATTR_NAME}'" \
-  ; do
-    echo -e "$ ${CMD}"
-    eval "${CMD}"
-  done
-} # end function findAttributeInFile
 
 # Window a single IOAPI file. Convenience for callers.
 # CONTRACT:
@@ -214,7 +187,7 @@ function stripOtherDatavars {
     if [[ -w "${OUTPUT_FP}" ]] ; then
       DEBUG echo -e "ERROR? ${FUNCNAME[0]}: output file='${OUTPUT_FP}' already exists"
     else
-      echo -e "ERROR: ${FUNCNAME[0]}: output file='${OUTPUT_FP}' exists but can't be written"
+      echo -e "ERROR: ${FUNCNAME[0]}: output file='${OUTPUT_FP}' exists but can't be written" 1>&2
       exit 1
     fi
   fi
@@ -244,6 +217,7 @@ function stripOtherDatavars {
   ' \
   ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
       "cat ${TEMPFILE}" \
+      "rm ${RAW_STRIPPED_FP}" \
     ; do
       echo -e "$ ${CMD}"
       eval "${CMD}"
@@ -251,7 +225,7 @@ function stripOtherDatavars {
 #    ncdump -v TFLAG ${OUTPUT_FP}
     export M3STAT_FILE="${OUTPUT_FP}"
   else
-    echo -e "ERROR: ${THIS_FN}:stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable"
+    echo -e "ERROR: ${THIS_FN}:stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable" 1>&2
     exit 2
   fi # end testing -x "${FIX_VARS_SCRIPT}"
 } # end function stripOtherDatavars
@@ -286,7 +260,7 @@ function exitIfDatavarNotFound {
   # add no single quotes to search command!
   SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
   if [[ -z "${SEARCH_RESULTS}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:exitIfDatavarNotFound: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'"
+    echo -e "ERROR: ${THIS_FN}:exitIfDatavarNotFound: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
     exit 1
   else
     DEBUG echo -e "${FUNCNAME[0]}: 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}' found ${SEARCH_RESULTS}"
@@ -304,9 +278,33 @@ function exitIfDatavarIsFound {
   # add no single quotes to search command!
   SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
   if [[ -n "${SEARCH_RESULTS}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:exitIfDatavarIsFound: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'"
+    echo -e "ERROR: ${THIS_FN}:exitIfDatavarIsFound: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
     exit 1
   else
     DEBUG echo -e "${FUNCNAME[0]}: nothing found for 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}'"
   fi
 }
+
+# Stop if cannot find attribute.
+# For datavar attribute, pass datavar name in $3; else, omit or pass null string.
+# Don't use return value, rely on side effect on stdout.
+# CONTRACT: dependency availability, arguments tested by caller
+function findAttributeInFile {
+  ATTR_NAME="$1"
+  NETCDF_FP="$2"
+  VAR_NAME="$3"
+  KEY_NAME="${VAR_NAME}:${VAR_ATTR_NAME}" # note colon needed for `ncdump`
+  # add no single quotes to search command! which is our "return value"
+  ncdump -h "${NETCDF_FP}" | fgrep -e "${KEY_NAME}"
+} # end function findAttributeInFile
+
+# Stop if cannot find datavar in file. kludged implementation!
+# Don't use return value, rely on side effect on stdout.
+# CONTRACT: dependency availability, arguments tested by caller
+function findDatavarInFile {
+  VAR_NAME="$1"
+  NETCDF_FP="$2"
+  # kludge: also pass the name of an attribute of the datavar, since we're only `ncdump`ing
+  VAR_ATTR_NAME="$3"
+  findDatavarAttributeInFile "${VAR_ATTR_NAME}" "${NETCDF_FP}" "${VAR_NAME}"
+} # end function findDatavarInFile
