@@ -95,10 +95,10 @@ function addPath {
           echo -e "PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: ${THIS_FN}:addPath: '${DIR}' is not a directory" 1>&2
+        echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: '${DIR}' is not a directory" 1>&2
       fi
     else
-      echo -e "ERROR: ${THIS_FN}:addPath: DIR not defined" 1>&2
+      echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: DIR not defined" 1>&2
     fi
 }
 
@@ -113,10 +113,10 @@ function addLdLibraryPath {
           echo -e "LD_LIBRARY_PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: '${DIR}' is not a directory" 1>&2
+        echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: '${DIR}' is not a directory" 1>&2
       fi
     else
-      echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: DIR not defined" 1>&2
+      echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: DIR not defined" 1>&2
     fi
 }
 
@@ -199,24 +199,22 @@ function stripOtherDatavars {
     INPUT_SUFFIX="${INPUT_FN##*.}"
     OUTPUT_DIR="$(dirname ${OUTPUT_FP})"
     RAW_STRIPPED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_stripped.${INPUT_SUFFIX}"
-  # start debugging
-#    echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
-#    echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
-#    echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
-  #   end debugging
+    DEBUG echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
+    DEBUG echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
+    DEBUG echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
 
     # gotta quote the double quotes :-(
     # need INPUT_FP to get original TFLAG?
+    # TODO: should "cat ${TEMPFILE}" after running R, but ${FIX_VARS_SCRIPT} is too verbose
     for CMD in \
       "ncks -O -v ${VAR_NAME},TFLAG ${INPUT_FP} ${RAW_STRIPPED_FP}" \
       "cp ${RAW_STRIPPED_FP} ${OUTPUT_FP}" \
       "R CMD BATCH --vanilla --slave '--args \
-  datavar.name=\"${VAR_NAME}\" \
-  epic.input.fp=\"${RAW_STRIPPED_FP}\" \
-  epic.output.fp=\"${OUTPUT_FP}\" \
+datavar.name=\"${VAR_NAME}\" \
+epic.input.fp=\"${RAW_STRIPPED_FP}\" \
+epic.output.fp=\"${OUTPUT_FP}\" \
   ' \
   ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
-      "cat ${TEMPFILE}" \
       "rm ${RAW_STRIPPED_FP}" \
     ; do
       echo -e "$ ${CMD}"
@@ -225,10 +223,67 @@ function stripOtherDatavars {
 #    ncdump -v TFLAG ${OUTPUT_FP}
     export M3STAT_FILE="${OUTPUT_FP}"
   else
-    echo -e "ERROR: ${THIS_FN}:stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable" 1>&2
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: script='${FIX_VARS_SCRIPT}' is not readable" 1>&2
     exit 2
-  fi # end testing -x "${FIX_VARS_SCRIPT}"
+  fi # end testing -r "${FIX_VARS_SCRIPT}"
 } # end function stripOtherDatavars
+
+# Rename datavar INPUT_VAR_NAME to OUTPUT_VAR_NAME.
+# For IOAPI, subsequently gotta fix
+# * global attr=VAR-LIST
+# * coordinate var=VAR
+# * data var=TFLAG
+# Note I copy files to output, *then* work on them, because that's what
+# R package=ncdf4 seems to want.
+# CONTRACT:
+# * arguments are not checked here, must be checked by callers
+# * nco/ncrename must be in path
+function renameDatavar {
+  INPUT_VAR_NAME="$1"
+  OUTPUT_VAR_NAME="$2"
+  NETCDF_FP="$3" # both input and output
+
+  if [[ -r "${FIX_VARS_SCRIPT}" ]] ; then
+    TEMPFILE="$(mktemp)" # for R output
+    OUTPUT_DIR="$(dirname ${NETCDF_FP})"
+    INPUT_FN="$(basename ${NETCDF_FP})"
+    INPUT_PREFIX="${INPUT_FN%.*}"
+    INPUT_SUFFIX="${INPUT_FN##*.}"
+    RAW_RENAMED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_renamed.${INPUT_SUFFIX}"
+    DEBUG echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
+    DEBUG echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
+    DEBUG echo -e "RAW_RENAMED_FP='${RAW_RENAMED_FP}'"
+
+    # gotta quote the double quotes :-(
+    # gotta create extra file for R?
+    # TODO: should "cat ${TEMPFILE}" after running R, but ${FIX_VARS_SCRIPT} is too verbose
+    for CMD in \
+      "ncrename -O -v ${INPUT_VAR_NAME},${OUTPUT_VAR_NAME} ${NETCDF_FP} ${RAW_STRIPPED_FP}" \
+      "cp ${RAW_STRIPPED_FP} ${NETCDF_FP}" \
+      "R CMD BATCH --vanilla --slave '--args \
+datavar.name=\"${OUTPUT_VAR_NAME}\" \
+epic.input.fp=\"${RAW_STRIPPED_FP}\" \
+epic.output.fp=\"${NETCDF_FP}\" \
+' \
+      ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
+      "rm ${RAW_STRIPPED_FP}" \
+    ; do
+      # but only if the first word is a command?
+      # no: `ncrename` is there, but we're not seeing it :-(
+#      if [[ -n "$(declare -f ${CMD%% *})" ]] ; then
+        echo -e "$ ${FUNCNAME[0]}:${CMD}" 1>&2
+        eval "${CMD}"
+#      else
+#        echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: command='${CMD%% *}' not defined, stopping"
+#        exit 1
+#      fi # end testing commands
+    done
+    export M3STAT_FILE="${OUTPUT_FP}"
+  else
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: script='${FIX_VARS_SCRIPT}' is not readable" 1>&2
+    exit 2
+  fi # end testing -r "${FIX_VARS_SCRIPT}"
+} # end function renameDatavar
 
 # "Comments" lines from running iff _DEBUG='on' (which can be export'ed by caller),
 # and runs with `set xtrace`
@@ -260,7 +315,7 @@ function exitIfDatavarNotFound {
   # add no single quotes to search command!
   SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
   if [[ -z "${SEARCH_RESULTS}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:exitIfDatavarNotFound: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
     exit 1
   else
     DEBUG echo -e "${FUNCNAME[0]}: 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}' found ${SEARCH_RESULTS}"
@@ -278,7 +333,7 @@ function exitIfDatavarIsFound {
   # add no single quotes to search command!
   SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
   if [[ -n "${SEARCH_RESULTS}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:exitIfDatavarIsFound: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
     exit 1
   else
     DEBUG echo -e "${FUNCNAME[0]}: nothing found for 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}'"
