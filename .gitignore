@@ -3,7 +3,6 @@
 .Rhistory
 
 # don't backup data files (upload them to github)
-data/
 *.csv
 *.csv.*
 *.dat

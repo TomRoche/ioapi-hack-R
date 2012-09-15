@@ -1,0 +1,24 @@
+FC = /afs/isis/pkg/pgi-9.0.1/linux86/9.0-1/bin/pgf90
+FFLAGS = -g -Mlfs
+PROGRAM = NCF2IOAPI_Edgar4
+NETCDF =  /nas01/depts/ie/cempd/apps/netcdf/netcdf-3.6.3/Linux86-pgf90-pgcc_901
+IOAPI_ROOT =/nas01/depts/ie/cempd/apps/ioapi_30/20090430
+LIBS   = -L$(IOAPI_ROOT)/Linux2_x86pg_pgcc_nomp_901_mxvars_500 -lioapi \
+         -L$(NETCDF)/lib -lnetcdf
+INCLUDE = -I$(IOAPI_ROOT)/ioapi/fixed_src -I$(IOAPI_ROOT)/Linux2_x86pg_pgcc_nomp_901_mxvars_500 \
+          -I$(NETCDF)/include
+
+RAW = get_envlist.o \
+      NCF2IOAPI.opoutfile_Edgar.o  NCF2IOAPI_Edgar4.o
+
+.f.o:
+	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
+
+.F.o:
+	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(PROGRAM):	$(RAW)
+	$(FC) $(FFLAGS) $(INCLUDE) -o $(@) $(RAW) $(LIBS)
+
+clean:
+	rm -f $(PROGRAM)

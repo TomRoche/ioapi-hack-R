@@ -1,0 +1,25 @@
+#!/bin/csh -f
+
+#
+#   INFILE    - MOZART output file (input to NCF2IOAPI).
+#   OUTFILE2D - I/O API file with 2D variables of INFILE (output from NCF2IOAPI).
+#   OUTFILE3D - I/O API file with 3D variables of INFILE (output from NCF2IOAPI).
+#
+#   MOZART_LAYER_LIMIT - The MOZART layer which serves as top layer for BC outputs;
+#                        Set this to avoid stratospheric impact.
+#
+
+setenv IOAPI_ISPH 19
+
+setenv MOZART_LAYER_LIMIT 24
+
+setenv STDATE 20050101
+setenv OUTFILE2D /nas01/depts/ese/uae01/air_quality/IE-modeling/Emissions/EI/edgar/4.1/0.1x0.1/edgar4.1.CO.1A3a1.0.1deg.ncf
+setenv OUTFILE3D /nas01/depts/ese/uae01/air_quality/IE-modeling/Emissions/EI/edgar/4.1/OUTFILE3D
+
+
+setenv INFILE /nas01/depts/ese/uae01/air_quality/IE-modeling/Emissions/EI/edgar/4.1/0.1x0.1/v41_CO_2005_IPCC_1A3a1.0.1x0.1.nc
+setenv AREAFILE /nas01/depts/ese/uae01/air_quality/IE-modeling/Emissions/EI/edgar/4.1/0.1x0.1/area_0.1x0.1.nc
+ 
+./NCF2IOAPI_Edgar4
+
