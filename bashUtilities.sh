@@ -95,10 +95,10 @@ function addPath {
           echo -e "PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: ${THIS_FN}:addPath: '${DIR}' is not a directory"
+        echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: '${DIR}' is not a directory" 1>&2
       fi
     else
-      echo -e "ERROR: ${THIS_FN}:addPath: DIR not defined"
+      echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: DIR not defined" 1>&2
     fi
 }
 
@@ -113,10 +113,10 @@ function addLdLibraryPath {
           echo -e "LD_LIBRARY_PATH contains '${DIR}'"
         fi
       else
-        echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: '${DIR}' is not a directory"
+        echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: '${DIR}' is not a directory" 1>&2
       fi
     else
-      echo -e "ERROR: ${THIS_FN}:addLdLibraryPath: DIR not defined"
+      echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: DIR not defined" 1>&2
     fi
 }
 
@@ -137,33 +137,6 @@ function setupModules {
   modulecmd bash add ${TERRAE_NCO_MODULE} ${TERRAE_IOAPI_MODULE} > ${TEMPFILE}
   source ${TEMPFILE}
 }
-
-# Used to search for where we're losing var attr=missing_value
-# Don't use return value, rely on side effect on stdout
-function findAttributeInFile {
-  ATTR_NAME="$1" # mandatory argument=attribute name
-  NC_FP="$2"     # mandatory argument=path to a netCDF file
-  if [[ -z "${ATTR_NAME}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:findAttribute: blank or missing attribute name"
-    return 1
-  fi
-  if [[ -z "${NC_FP}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:findAttribute: blank or missing path to netCDF file"
-    return 2
-  fi
-  if [[ ! -r "${NC_FP}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:findAttribute: cannot read netCDF file='${NC_FP}'"
-    return 3
-  fi
-
-  # TODO: test these are in path
-  for CMD in \
-    "ncdump -h ${NC_FP} | fgrep -e '${ATTR_NAME}'" \
-  ; do
-    echo -e "$ ${CMD}"
-    eval "${CMD}"
-  done
-} # end function findAttributeInFile
 
 # Window a single IOAPI file. Convenience for callers.
 # CONTRACT:
@@ -214,7 +187,7 @@ function stripOtherDatavars {
     if [[ -w "${OUTPUT_FP}" ]] ; then
       DEBUG echo -e "ERROR? ${FUNCNAME[0]}: output file='${OUTPUT_FP}' already exists"
     else
-      echo -e "ERROR: ${FUNCNAME[0]}: output file='${OUTPUT_FP}' exists but can't be written"
+      echo -e "ERROR: ${FUNCNAME[0]}: output file='${OUTPUT_FP}' exists but can't be written" 1>&2
       exit 1
     fi
   fi
@@ -226,24 +199,23 @@ function stripOtherDatavars {
     INPUT_SUFFIX="${INPUT_FN##*.}"
     OUTPUT_DIR="$(dirname ${OUTPUT_FP})"
     RAW_STRIPPED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_stripped.${INPUT_SUFFIX}"
-  # start debugging
-#    echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
-#    echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
-#    echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
-  #   end debugging
+    DEBUG echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
+    DEBUG echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
+    DEBUG echo -e "RAW_STRIPPED_FP='${RAW_STRIPPED_FP}'"
 
     # gotta quote the double quotes :-(
     # need INPUT_FP to get original TFLAG?
+    # TODO: should "cat ${TEMPFILE}" after running R, but ${FIX_VARS_SCRIPT} is too verbose
     for CMD in \
       "ncks -O -v ${VAR_NAME},TFLAG ${INPUT_FP} ${RAW_STRIPPED_FP}" \
       "cp ${RAW_STRIPPED_FP} ${OUTPUT_FP}" \
       "R CMD BATCH --vanilla --slave '--args \
-  datavar.name=\"${VAR_NAME}\" \
-  epic.input.fp=\"${RAW_STRIPPED_FP}\" \
-  epic.output.fp=\"${OUTPUT_FP}\" \
+datavar.name=\"${VAR_NAME}\" \
+epic.input.fp=\"${RAW_STRIPPED_FP}\" \
+epic.output.fp=\"${OUTPUT_FP}\" \
   ' \
   ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
-      "cat ${TEMPFILE}" \
+      "rm ${RAW_STRIPPED_FP}" \
     ; do
       echo -e "$ ${CMD}"
       eval "${CMD}"
@@ -251,10 +223,67 @@ function stripOtherDatavars {
 #    ncdump -v TFLAG ${OUTPUT_FP}
     export M3STAT_FILE="${OUTPUT_FP}"
   else
-    echo -e "ERROR: ${THIS_FN}:stripOtherDatavars: script='${FIX_VARS_SCRIPT}' is not readable"
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: script='${FIX_VARS_SCRIPT}' is not readable" 1>&2
     exit 2
-  fi # end testing -x "${FIX_VARS_SCRIPT}"
+  fi # end testing -r "${FIX_VARS_SCRIPT}"
 } # end function stripOtherDatavars
+
+# Rename datavar INPUT_VAR_NAME to OUTPUT_VAR_NAME.
+# For IOAPI, subsequently gotta fix
+# * global attr=VAR-LIST
+# * coordinate var=VAR
+# * data var=TFLAG
+# Note I copy files to output, *then* work on them, because that's what
+# R package=ncdf4 seems to want.
+# CONTRACT:
+# * arguments are not checked here, must be checked by callers
+# * nco/ncrename must be in path
+function renameDatavar {
+  INPUT_VAR_NAME="$1"
+  OUTPUT_VAR_NAME="$2"
+  NETCDF_FP="$3" # both input and output
+
+  if [[ -r "${FIX_VARS_SCRIPT}" ]] ; then
+    TEMPFILE="$(mktemp)" # for R output
+    OUTPUT_DIR="$(dirname ${NETCDF_FP})"
+    INPUT_FN="$(basename ${NETCDF_FP})"
+    INPUT_PREFIX="${INPUT_FN%.*}"
+    INPUT_SUFFIX="${INPUT_FN##*.}"
+    RAW_RENAMED_FP="${OUTPUT_DIR}/${INPUT_PREFIX}_renamed.${INPUT_SUFFIX}"
+    DEBUG echo -e "INPUT_PREFIX='${INPUT_PREFIX}'"
+    DEBUG echo -e "INPUT_SUFFIX='${INPUT_SUFFIX}'"
+    DEBUG echo -e "RAW_RENAMED_FP='${RAW_RENAMED_FP}'"
+
+    # gotta quote the double quotes :-(
+    # gotta create extra file for R?
+    # TODO: should "cat ${TEMPFILE}" after running R, but ${FIX_VARS_SCRIPT} is too verbose
+    for CMD in \
+      "ncrename -O -v ${INPUT_VAR_NAME},${OUTPUT_VAR_NAME} ${NETCDF_FP} ${RAW_STRIPPED_FP}" \
+      "cp ${RAW_STRIPPED_FP} ${NETCDF_FP}" \
+      "R CMD BATCH --vanilla --slave '--args \
+datavar.name=\"${OUTPUT_VAR_NAME}\" \
+epic.input.fp=\"${RAW_STRIPPED_FP}\" \
+epic.output.fp=\"${NETCDF_FP}\" \
+' \
+      ${FIX_VARS_SCRIPT} ${TEMPFILE}" \
+      "rm ${RAW_STRIPPED_FP}" \
+    ; do
+      # but only if the first word is a command?
+      # no: `ncrename` is there, but we're not seeing it :-(
+#      if [[ -n "$(declare -f ${CMD%% *})" ]] ; then
+        echo -e "$ ${FUNCNAME[0]}:${CMD}" 1>&2
+        eval "${CMD}"
+#      else
+#        echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: command='${CMD%% *}' not defined, stopping"
+#        exit 1
+#      fi # end testing commands
+    done
+    export M3STAT_FILE="${OUTPUT_FP}"
+  else
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: script='${FIX_VARS_SCRIPT}' is not readable" 1>&2
+    exit 2
+  fi # end testing -r "${FIX_VARS_SCRIPT}"
+} # end function renameDatavar
 
 # "Comments" lines from running iff _DEBUG='on' (which can be export'ed by caller),
 # and runs with `set xtrace`
@@ -286,7 +315,7 @@ function exitIfDatavarNotFound {
   # add no single quotes to search command!
   SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
   if [[ -z "${SEARCH_RESULTS}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:exitIfDatavarNotFound: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'"
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: could not find varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
     exit 1
   else
     DEBUG echo -e "${FUNCNAME[0]}: 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}' found ${SEARCH_RESULTS}"
@@ -304,9 +333,33 @@ function exitIfDatavarIsFound {
   # add no single quotes to search command!
   SEARCH_RESULTS="$(ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL})"
   if [[ -n "${SEARCH_RESULTS}" ]] ; then
-    echo -e "ERROR: ${THIS_FN}:exitIfDatavarIsFound: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'"
+    echo -e "ERROR: ${THIS_FN}:${FUNCNAME[0]}: found varname='${VAR_NAME}' in netCDF file='${NETCDF_FP}'" 1>&2
     exit 1
   else
     DEBUG echo -e "${FUNCNAME[0]}: nothing found for 'ncdump -h ${NETCDF_FP} | fgrep -e ${KEY_NAME} | fgrep -e ${VAR_ATTR_VAL}'"
   fi
 }
+
+# Stop if cannot find attribute.
+# For datavar attribute, pass datavar name in $3; else, omit or pass null string.
+# Don't use return value, rely on side effect on stdout.
+# CONTRACT: dependency availability, arguments tested by caller
+function findAttributeInFile {
+  ATTR_NAME="$1"
+  NETCDF_FP="$2"
+  VAR_NAME="$3"
+  KEY_NAME="${VAR_NAME}:${VAR_ATTR_NAME}" # note colon needed for `ncdump`
+  # add no single quotes to search command! which is our "return value"
+  ncdump -h "${NETCDF_FP}" | fgrep -e "${KEY_NAME}"
+} # end function findAttributeInFile
+
+# Stop if cannot find datavar in file. kludged implementation!
+# Don't use return value, rely on side effect on stdout.
+# CONTRACT: dependency availability, arguments tested by caller
+function findDatavarInFile {
+  VAR_NAME="$1"
+  NETCDF_FP="$2"
+  # kludge: also pass the name of an attribute of the datavar, since we're only `ncdump`ing
+  VAR_ATTR_NAME="$3"
+  findDatavarAttributeInFile "${VAR_ATTR_NAME}" "${NETCDF_FP}" "${VAR_NAME}"
+} # end function findDatavarInFile
