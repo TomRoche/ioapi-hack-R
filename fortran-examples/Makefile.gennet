@@ -1,0 +1,24 @@
+# settings for infinity: same as Makefile.netcdf2ioapi
+FC         = /share/linux86_64/intel/fc/11.1.059/bin/intel64/ifort
+FFLAGS     = -fixed -132 -O3 -override-limits -fno-alias -mp1
+# TODO: should be NETCDF_ROOT
+NETCDF     = /home/wdx/lib/x86_64i/ifc/netcdf
+IOAPI_ROOT = /home/wdx/lib/x86_64i/ifc/ioapi_3.1
+# TODO: parameterize $(IOAPI_ROOT)/$(foo)
+LIBS    = -L$(IOAPI_ROOT)/Linux2_x86_64ifort -lioapi \
+          -L$(NETCDF)/lib -lnetcdf
+INCLUDE = -I$(IOAPI_ROOT)/ioapi/fixed_src \
+          -I$(IOAPI_ROOT)/Linux2_x86_64ifort \
+          -I$(NETCDF)/include
+
+PROGRAM = gennet
+RAW     = $(PROGRAM).o
+
+.f.o:
+	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
+
+.F.o:
+	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(PROGRAM):	$(RAW)
+	$(FC) $(FFLAGS) $(INCLUDE) -o $(@) $(RAW) $(LIBS)
