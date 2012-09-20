@@ -17,7 +17,12 @@
 # don't backup visualizations (upload them to github)
 *.pdf
 
-# pre-SCM backups
+# don't backup pre-SCM backups
 *.r.*
 *.pdf.*
 *.sh.*
+
+# don't backup non-source code
+*.o
+gennet
+netcdf2ioapi
