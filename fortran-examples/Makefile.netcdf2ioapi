@@ -1,7 +1,6 @@
 # settings for infinity
 FC         = /share/linux86_64/intel/fc/11.1.059/bin/intel64/ifort
 FFLAGS     = -fixed -132 -O3 -override-limits -fno-alias -mp1
-PROGRAM    = netcdf2ioapi
 # TODO: should be NETCDF_ROOT
 NETCDF     = /home/wdx/lib/x86_64i/ifc/netcdf
 IOAPI_ROOT = /home/wdx/lib/x86_64i/ifc/ioapi_3.1
@@ -14,6 +13,8 @@ INCLUDE = -I$(IOAPI_ROOT)/ioapi/fixed_src \
 
 #RAW   = get_envlist.o NCF2IOAPI.opoutfile_Edgar.o  NCF2IOAPI_Edgar4.o
 RAW   = get_envlist.o netcdf2ioapi.opoutfile.o  netcdf2ioapi.o
+
+PROGRAM    = netcdf2ioapi
 
 .f.o:
 	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<

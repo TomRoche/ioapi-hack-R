@@ -1,5 +1,3 @@
-C ftp://ftp.unidata.ucar.edu/pub/netcdf/contrib/gennet.f
-C linked from http://www.unidata.ucar.edu/software/netcdf/contrib.html
 C
 C     PROGRAM GENNET.FOR
 C
