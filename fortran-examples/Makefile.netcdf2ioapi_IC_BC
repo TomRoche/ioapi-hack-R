@@ -1,0 +1,27 @@
+PROGRAM    = netcdf2ioapi_IC_BC
+# settings for infinity
+FC         = /share/linux86_64/intel/fc/11.1.059/bin/intel64/ifort
+FFLAGS     = -fixed -132 -O3 -override-limits -fno-alias -mp1
+NETCDF_ROOT= /home/wdx/lib/x86_64i/ifc/netcdf
+IOAPI_ROOT = /home/wdx/lib/x86_64i/ifc/ioapi_3.1
+ARCH_TYPE  = Linux2_x86_64ifort
+LIBS       = -L$(IOAPI_ROOT)/$(ARCH_TYPE) -lioapi \
+             -L$(NETCDF_ROOT)/lib -lnetcdf
+# fails:             -L$(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
+INCLUDE    = -I$(IOAPI_ROOT)/ioapi/fixed_src \
+             -I$(IOAPI_ROOT)/$(ARCH_TYPE) \
+             -I$(NETCDF_ROOT)/include
+
+OBJS       = get_envlist.o netcdf2ioapi.opoutfile.o $(PROGRAM).o
+
+.f.o:
+	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
+
+.F.o:
+	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
+
+$(PROGRAM):	$(OBJS)
+	$(FC) $(FFLAGS) $(INCLUDE) -o $(@) $(OBJS) $(LIBS)
+
+clean:
+	rm -f $(PROGRAM)
