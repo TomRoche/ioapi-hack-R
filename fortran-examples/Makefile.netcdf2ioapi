@@ -1,18 +1,17 @@
 # settings for infinity
 FC         = /share/linux86_64/intel/fc/11.1.059/bin/intel64/ifort
 FFLAGS     = -fixed -132 -O3 -override-limits -fno-alias -mp1
-# TODO: should be NETCDF_ROOT
-NETCDF     = /home/wdx/lib/x86_64i/ifc/netcdf
+NETCDF_ROOT= /home/wdx/lib/x86_64i/ifc/netcdf
 IOAPI_ROOT = /home/wdx/lib/x86_64i/ifc/ioapi_3.1
-# TODO: parameterize $(IOAPI_ROOT)/$(foo)
-LIBS    = -L$(IOAPI_ROOT)/Linux2_x86_64ifort -lioapi \
-          -L$(NETCDF)/lib -lnetcdf
-INCLUDE = -I$(IOAPI_ROOT)/ioapi/fixed_src \
-          -I$(IOAPI_ROOT)/Linux2_x86_64ifort \
-          -I$(NETCDF)/include
+ARCH_TYPE  = Linux2_x86_64ifort
+LIBS       = -L$(IOAPI_ROOT)/$(ARCH_TYPE) -lioapi \
+             -L$(NETCDF_ROOT)/lib -lnetcdf
+# fails:             -L$(NETCDF_ROOT)/lib -lnetcdf -lnetcdff
+INCLUDE    = -I$(IOAPI_ROOT)/ioapi/fixed_src \
+             -I$(IOAPI_ROOT)/$(ARCH_TYPE) \
+             -I$(NETCDF_ROOT)/include
 
-#RAW   = get_envlist.o NCF2IOAPI.opoutfile_Edgar.o  NCF2IOAPI_Edgar4.o
-RAW   = get_envlist.o netcdf2ioapi.opoutfile.o  netcdf2ioapi.o
+OBJS   = get_envlist.o netcdf2ioapi.opoutfile.o  netcdf2ioapi.o
 
 PROGRAM    = netcdf2ioapi
 
@@ -22,8 +21,8 @@ PROGRAM    = netcdf2ioapi
 .F.o:
 	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
 
-$(PROGRAM):	$(RAW)
-	$(FC) $(FFLAGS) $(INCLUDE) -o $(@) $(RAW) $(LIBS)
+$(PROGRAM):	$(OBJS)
+	$(FC) $(FFLAGS) $(INCLUDE) -o $(@) $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROGRAM)
