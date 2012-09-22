@@ -2,7 +2,7 @@ The following files all relate, in some fashion, to the task of converting "stra
 http://www.unidata.ucar.edu/software/netcdf/
 (e.g., from a global emissions inventory (EI)) into I/O-API-formatted netCDF (aka, IOAPI)
 http://www.baronams.com/products/ioapi/
-http://www.cmaq-model.org/cmaqwiki/index.php?title=CMAQ_version_5.0_%28February_2010_release%29_OGD&CFID=4651&CFTOKEN=529f62d258a850e1-F51BCC11-0467-4D86-8576E84FCA1C074A#Input.2FOutput_Applications_Programming_Interface_.28I.2FO_API.29
+http://www.cmaq-model.org/cmaqwiki/index.php?title=CMAQ_version_5.0_%28February_2010_release%29_OGD&#Input.2FOutput_Applications_Programming_Interface_.28I.2FO_API.29
 
 Makefile.NCF2IOAPI_edgar
 NCF2IOAPI.opoutfile_Edgar.f
