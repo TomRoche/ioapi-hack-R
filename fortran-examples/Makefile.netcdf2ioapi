@@ -12,7 +12,7 @@ INCLUDE    = -I$(IOAPI_ROOT)/ioapi/fixed_src \
              -I$(IOAPI_ROOT)/$(ARCH_TYPE) \
              -I$(NETCDF_ROOT)/include
 
-OBJS       = get_envlist.o netcdf2ioapi.opoutfile.o netcdf2ioapi.o
+OBJS       = get_envlist.o netcdf2ioapi.opoutfile.o $(PROGRAM).o
 
 .f.o:
 	$(FC) $(FFLAGS) $(INCLUDE) -c -o $@ $<
