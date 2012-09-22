@@ -26,3 +26,7 @@
 *.o
 gennet
 netcdf2ioapi
+
+# don't backup generated (by gennet) sources
+readnet.f
+readnet.for
