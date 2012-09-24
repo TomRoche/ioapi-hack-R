@@ -1,0 +1,62 @@
+#!/bin/env bash
+#   INFILE    - MOZART output file (input to NCF2IOAPI).
+#   OUTFILE2D - I/O API file with 2D variables of INFILE (output from NCF2IOAPI).
+#   OUTFILE3D - I/O API file with 3D variables of INFILE (output from NCF2IOAPI).
+#
+#   MOZART_LAYER_LIMIT - The MOZART layer which serves as top layer for BC outputs;
+#                        Set this to avoid stratospheric impact.
+#
+
+# export IOAPI_ISPH='19'
+# export MOZART_LAYER_LIMIT='24'
+
+# export STDATE='20050101'
+# export OUTFILE='/nas01/depts/ese/uae01/air_quality/IE-modeling/Emissions/EI/edgar/4.1/0.1x0.1/edgar4.1.CO.1A3a1.0.1deg.ncf'
+# # export OUTFILE3D='/nas01/depts/ese/uae01/air_quality/IE-modeling/Emissions/EI/edgar/4.1/OUTFILE3D'
+
+RUNNER_FN='netcdf2ioapi_IC_BC'
+MAKER_FN="Makefile.${RUNNER_FN}"
+INFILE_NAME='2008N2O_restart'
+INFILE_DIR='.'
+OUTFILE_DIR='.'
+RUNNER_DIR='.'
+MAKER_DIR='.'
+RUNNER_FP="${RUNNER_DIR}/${RUNNER_FN}"
+MAKER_FP="${MAKER_DIR}/${MAKER_FN}"
+
+DATE_FORMAT="%Y%m%d_%H%M"
+DATE="$(date +${DATE_FORMAT})"
+INFILE_FN="${INFILE_NAME}.nc"
+INFILE_FP="${INFILE_DIR}/${INFILE_FN}"
+
+OUTFILE_NAME="${INFILE_NAME}_ioapi_${DATE}"
+OUTFILE_FN="${OUTFILE_NAME}.nc"
+OUTFILE_FP="${OUTFILE_DIR}/${OUTFILE_FN}"
+
+export INFILE="${INFILE_FP}"
+export OUTFILE="${OUTFILE_FP}"
+
+if [[ ! -r "${RUNNER_FP}" ]] ; then
+  for CMD in \
+    "make -f ${MAKER_FP}" \
+  ; do
+    echo -e "$ ${CMD}"
+    eval "${CMD}"
+  done
+fi
+
+if [[ ! -x "${RUNNER_FP}" ]] ; then
+  for CMD in \
+    "chmod u+x ${RUNNER_FP}" \
+  ; do
+    echo -e "$ ${CMD}"
+    eval "${CMD}"
+  done
+fi
+
+for CMD in \
+  "${RUNNER_FP}" \
+; do
+  echo -e "$ ${CMD}"
+  eval "${CMD}"
+done

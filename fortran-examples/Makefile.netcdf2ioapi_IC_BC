@@ -24,4 +24,4 @@ $(PROGRAM):	$(OBJS)
 	$(FC) $(FFLAGS) $(INCLUDE) -o $(@) $(OBJS) $(LIBS)
 
 clean:
-	rm -f $(PROGRAM)
+	rm -f $(PROGRAM) $(PROGRAM).o
